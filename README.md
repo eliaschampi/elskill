@@ -6,11 +6,11 @@ The governing principle is **one owner per rule, the smallest complete behavior,
 
 | Skill | Use it for | What it owns |
 | --- | --- | --- |
-| [el-architecture](el-architecture/SKILL.md) | Cross-layer implementation, architecture, refactoring, review | Execution contract, ownership, scope, evidence, completion |
+| [el-architecture](el-architecture/SKILL.md) | Cross-layer implementation, architecture, refactoring, review | Risk classes, execution contract, ownership, scope, evidence, completion |
 | [el-backend](el-backend/SKILL.md) | Rust HTTP, SQL, authorization, migrations, workers | Integrity, atomicity, concurrency, contracts, bounded resources |
-| [el-design](el-design/SKILL.md) | Screens, forms, interactions, responsive UI | Task clarity, state transitions, accessibility, visual verification |
+| [el-design](el-design/SKILL.md) | Screens, forms, interactions, responsive UI | Task clarity, state transitions, visual craft, accessibility, rendered verification |
 
-Load architecture once for shared decisions, then the relevant domain skill. Each skill routes to focused references only when needed. Existing frameworks and design systems remain authoritative; Rust/axum/sqlx/PostgreSQL and Svelte/Lumi have dedicated guidance, not universal mandates.
+A local change needs only its domain skill; load architecture for cross-layer, structural, or critical work. Each skill names the rule groups a change touches and routes to focused references only when needed. Existing frameworks and design systems remain authoritative; Rust/axum/sqlx/PostgreSQL and Svelte/Lumi have dedicated guidance, not universal mandates.
 
 ## Install
 
@@ -38,7 +38,7 @@ Use $el-design to improve this order form within the existing design system.
 Verify keyboard use, failed submission recovery, and the rendered mobile layout.
 ```
 
-The workflow is **observe → define outcome and proof → change the owner → verify → review the diff**. Routine edits stay routine. Architecture rule IDs (`A1`–`A25`), backend IDs (`B1`–`B47`), and design IDs (`D1`–`D49`) remain available for reviews. Cite the repository revision with a rule ID: its wording and applicability can evolve.
+The workflow is **classify the risk → observe → define outcome and proof → change the owner → verify → check proportion**. A trivial edit skips the ceremony; a critical one earns a failing test first. Architecture rule IDs (`A1`–`A25`), backend IDs (`B1`–`B47`), and design IDs (`D1`–`D49`) remain available for reviews. Cite the repository revision with a rule ID: its wording and applicability can evolve.
 
 ## Maintain and evaluate
 
@@ -55,7 +55,7 @@ These checks validate the package, not a model's engineering judgment. The [beha
 
 Contributions should explain the observed failure or decision, modify its existing owner, and include the relevant verification. Keep one owner per instruction and conditional detail in its reference. Preserve rule IDs, remove superseded guidance, and check the original rule's useful mechanisms before shortening it. Product settings belong to products; security and accessibility criteria come from their applicable standards.
 
-Research and adoption decisions are recorded in [SOURCES.md](SOURCES.md), including pinned revisions of all four requested repositories. The resulting guidance is an original synthesis, not a bundled copy of those skill packs.
+Research and adoption decisions are recorded in [SOURCES.md](SOURCES.md), with the pinned revision of every inspected repository. The resulting guidance is an original synthesis, not a bundled copy of those skill packs.
 
 ## License
 

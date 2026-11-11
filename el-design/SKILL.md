@@ -6,7 +6,20 @@ license: MIT
 
 # EL Design
 
-Use [EL Architecture](../el-architecture/SKILL.md) for the shared workflow. This skill owns interaction and presentation. Read [Lumi](references/lumi.md) when Lumi is installed and [Svelte patterns](references/svelte-patterns.md) for Svelte work. Verify unfamiliar component APIs against the installed package.
+This skill owns interaction and presentation. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer or structural work. Read [Lumi](references/lumi.md) when Lumi is installed, [Svelte patterns](references/svelte-patterns.md) for Svelte work, and [visual craft](references/visual-craft.md) when creating, redesigning, or polishing a visual language. Verify unfamiliar component APIs against the installed package.
+
+Apply the rule groups the change touches, not all of them:
+
+| Change | Rules |
+| --- | --- |
+| Wording, labels, messages | D43–D46 |
+| Styling within the existing system | D2–D5, D31–D38 |
+| Page, list, table, navigation | D1–D18, D27–D30, D39–D42 |
+| Form, dialog, mutation | D1–D8, D19–D29, D39–D42 |
+| Dependency, heavy asset, slow screen | D47–D49 |
+| New visual language or redesign | Establish direction, D31–D38, visual craft |
+
+Before writing JavaScript or adding a dependency for an overlay, positioning, transition, validation, or scroll effect, check whether the platform already provides it within the project's browser support: use the `modern-web-guidance` skill when installed, otherwise MDN and Baseline status.
 
 ## Establish direction
 

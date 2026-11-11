@@ -6,7 +6,20 @@ license: MIT
 
 # EL Backend
 
-Use [EL Architecture](../el-architecture/SKILL.md) for the shared workflow and ownership decisions. This skill owns server correctness. Project contracts determine names, versions, conventions, and approved infrastructure.
+This skill owns server correctness. Project contracts determine names, versions, conventions, and approved infrastructure. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer, structural, or critical work.
+
+Apply the rule groups the change touches, not all of them:
+
+| Change | Rules |
+| --- | --- |
+| Any tenant- or user-scoped request | B5, B18–B22 |
+| Read endpoint or query | B23–B27, B40–B42 |
+| Write | B4, B6–B8, B11–B17, and the read rules |
+| Schema, constraint, or migration | B1–B10 |
+| Worker, queue, or external call | B13, B28–B32, B44 |
+| Authentication, sessions, secrets, public surfaces | B33–B39 |
+| Caching or optimization | B40–B44 |
+| Any behavior change | B45–B47, scaled to its risk |
 
 | Task | Reference |
 | --- | --- |

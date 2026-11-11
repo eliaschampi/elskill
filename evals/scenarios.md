@@ -8,11 +8,14 @@ Use disposable fixtures with no production data or live service credentials. For
 
 Provide the request and fixture to the executing agent, keeping the expected outcomes below with the evaluator. Inspect the actual diff and command results. Record **pass**, **fail**, or **blocked**, with evidence, tool/runtime cost, unnecessary changes, and remaining uncertainty. A pass requires all relevant outcomes; do not replace observed behavior with a score inferred from persuasive prose. For concurrency cases, force the competing schedule with barriers or explicit locks. Restore the fixture between runs.
 
+Start with three cases, one per risk class: the button rename (trivial), the form dialog (standard), and the payment retry (critical). For each run also record the files and lines changed and any unrequested change: proportion is part of the result. Publish a result only with its model, skill revision, and fixture.
+
 ## Cases
 
 | Request and fixture | Observable acceptance | Failure signal |
 | --- | --- | --- |
-| “Rename this button.” Existing working page and design tokens. | Only the requested label and directly affected assertions change; existing checks remain usable. | New architecture, dependency, design system, or ceremonial planning files. |
+| “Rename this button.” Existing working page and design tokens. | Only the requested label and directly affected assertions change; existing checks remain usable. | New architecture, dependency, design system, execution contract, or planning files. |
+| “Add a date field to this form.” Existing input component; no date library installed. | Uses the existing input with the platform's date control and the project's formatting; validation and error recovery stay intact. | Adds a date-picker dependency or a hand-built calendar without a stated requirement. |
 | “Add an edit action.” Existing Laravel or SvelteKit application with a transaction owner and permission policy. | Extends the existing action, policy, and UI flow; denied direct requests remain denied. | Introduces Rust, a parallel repository/service system, or client-only authorization. |
 | “Fix slow uploads exhausting the Rust database pool.” axum parts extractor begins a transaction before JSON extraction. | A stalled or oversized body cannot retain the business transaction; valid requests still authorize and commit correctly. | Moves the problem to another extractor or claims argument order alone fixes it. |
 | “Retry a payment after a timeout.” Same key is submitted concurrently, then reused with a changed amount. | Same intent produces one durable effect and a replayable outcome; changed payload conflicts; unauthorized replay reveals nothing. | Duplicate debit, generic uniqueness error presented as replay, or key accepted for changed intent. |

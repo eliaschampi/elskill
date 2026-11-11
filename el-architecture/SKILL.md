@@ -8,7 +8,19 @@ license: MIT
 
 Build the smallest complete solution whose behavior can be demonstrated. Prioritize correctness, clarity, consistency, then measured performance. Economy removes unnecessary work, not safeguards.
 
-This skill owns the shared workflow: read it once when combining the EL skills. Project instructions and explicit user decisions govern local conventions. Preserve useful constraints when generalizing: replace a project-specific choice with its decision criteria and a safe starting point, not vague advice.
+This skill owns the shared workflow: read it once when combining the EL skills. Project instructions and explicit user decisions govern local conventions.
+
+## Scale the response to the risk
+
+Classify the change first; the class decides how much of this skill applies. Treating routine work as critical wastes the user's time; treating critical work as routine loses their data.
+
+| Class | Signals | Response |
+| --- | --- | --- |
+| **Trivial** | One owner; no change to a contract, stored data, permission, or dependency; easy to revert | Change it, run the nearest existing check, report. Skip the execution contract, plans, and further EL reading. |
+| **Standard** | Behavior changes inside existing owners | The execution contract, the rule groups the change touches, and its proof. |
+| **Critical** | Money, identity, authorization, tenant isolation, destructive or migrating data, concurrency, irreversible external effects | Standard, plus a failing test first, evidence under the competing or failing condition, and a pause on unresolved semantics. |
+
+Escalate when evidence shows a higher class: a rename that crosses a wire contract is not trivial. Never lower the class to save effort. Before finishing, check proportion: each added file, abstraction, dependency, and option is required by the outcome. A small request with a large diff needs a stated reason or a smaller diff.
 
 ## Establish the execution contract
 
@@ -17,7 +29,7 @@ This skill owns the shared workflow: read it once when combining the EL skills. 
 - **A3. One durable owner.** Update the existing home of each rule, decision, contract, or task. Do not add competing specifications, roadmaps, or status records.
 - **A4. Match the repository.** Document names and folder layouts are conventions, not prerequisites. Read [document ownership](references/doc-system.md) when creating or reorganizing documentation.
 
-For nontrivial work, state this compact contract before editing; use the existing plan or task record, not a mandatory new file:
+For standard and critical work, state this compact contract before editing; use the existing plan or task record, not a mandatory new file:
 
 | Field | Answer |
 | --- | --- |

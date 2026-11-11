@@ -48,6 +48,16 @@ Inspected its [entry skill](https://github.com/pbakaus/impeccable/blob/c1e0e5492
 
 **Owner:** [design](el-design/SKILL.md) and its conditional framework references.
 
+## Chrome team: retrieve platform knowledge on demand
+
+Source: [Modern Web Guidance at 4dd9683](https://github.com/GoogleChrome/modern-web-guidance/tree/4dd968349e54ca45a05dd5c818fb035c9054b022), [Apache-2.0 license](https://github.com/GoogleChrome/modern-web-guidance/blob/4dd968349e54ca45a05dd5c818fb035c9054b022/LICENSE). Inspected its README.
+
+**Adopt:** search for a native platform capability before writing JavaScript or adding a dependency; keep specialized knowledge retrievable instead of always loaded; prune guidance that evaluations show a model no longer needs.
+
+**Adapt:** elskill decides what must be solved and how it is proven; platform guides answer how the browser does it. The guide library is neither bundled nor required: the design skill points to it when installed and to MDN and Baseline otherwise.
+
+**Owner:** [design](el-design/SKILL.md), entry routing.
+
 ## elskill synthesis
 
 - **Execution contract:** outcome, owner, constraints, proof, and unresolved decisions make the next action explicit without a separate planning bureaucracy.
@@ -77,3 +87,17 @@ Retained corrections include transactions per atomic operation, version-compatib
 The upstream ideas now have concrete checks: Addy's quality gates must reject invalid inputs and checker errors; Ponytail's minimal change preserves every affected consumer; Pocock's module interfaces include construction and serialization paths; Impeccable's visual intent is paired with rendered accessibility evidence. The installed instructions remain independent of those repositories and of any model identity or price.
 
 The repository's MIT license covers its own material. Public packaging tests establish installation and metadata behavior; the model evaluation scenarios remain unexecuted specifications, not evidence of universal model quality.
+
+## Proportion revision
+
+A review of `8245a6f` judged the rules sound and found three gaps: the entry points applied the same weight to every task, the design guidance said more about what to avoid than what to build, and no behavior was measured. The response adds selection, not knowledge.
+
+| Decision | Owner |
+| --- | --- |
+| Classify risk first: trivial work skips the contract; critical work adds a failing test and evidence under failure; every change ends with a proportion check | [Architecture](el-architecture/SKILL.md), "Scale the response to the risk" |
+| Each domain skill names the rule groups a change touches, and a local change no longer loads architecture | [Backend](el-backend/SKILL.md) and [design](el-design/SKILL.md) entry points |
+| Positive, judgeable visual starting points live in a conditional reference | [Visual craft](el-design/references/visual-craft.md) |
+| Rules stay in the entry points: a one-line rule costs less than a retrieval round trip, and a reference nobody opens protects nothing | All three skills |
+| No benchmark is claimed; the first three comparisons and their measurements are named | [Scenarios](evals/scenarios.md) |
+
+Not adopted: mandatory brainstorming, plan documents, or subagents for ordinary work; session modes; a bundled guide library; aesthetic bans. Each adds ceremony or weight to the routine case this revision makes cheaper.
