@@ -1,4 +1,4 @@
 interface:
-  display_name: "EL · Arquitectura"
-  short_description: "Dueño único por regla, sin capas, protocolo claro"
-  default_prompt: "Usa $el-architecture para decidir dónde vive cada regla y construir este cambio como un vertical completo."
+  display_name: "EL Architecture"
+  short_description: "Explicit ownership and verifiable complete changes"
+  default_prompt: "Use $el-architecture to trace the affected flow, choose its owner, and deliver the smallest complete change with evidence."

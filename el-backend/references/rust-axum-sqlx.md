@@ -1,281 +1,59 @@
-# Rust + axum + sqlx (el estilo de core-rs)
+# Rust, axum, and SQLx
 
-Fragmentos reales de core-rs, recortados. Antes de usar la API de un crate, lee su fuente en `~/.cargo/registry/src`: no adivines firmas.
+Read for Rust backend work. Resolve versions and features from `rust-toolchain.toml`, manifests, and lockfiles. Inspect installed crate APIs or matching official documentation before using unfamiliar signatures. The guidance below describes responsibilities, not a scaffold to copy verbatim.
 
-**Contenido:** 1. Workspace y puertas · 2. `domain`: tipos que sólo existen válidos · 3. Tabla de rutas · 4. Handler · 5. Política · 6. Errores · 7. SQL · 8. Async y recursos · 9. Pruebas · 10. Checks
+## Boundaries and types
 
-## 1. Workspace y puertas
+- Keep pure domain calculations and policies independent of HTTP and database crates when the project already separates them. A small application does not automatically need more crates.
+- Use validated newtypes for values with real invariants and enums for exclusive states. Keep constructors private where validity depends on parsing; check overflow and explicit conversions at boundaries.
+- Distinguish domain models, persisted facts, and public representations where their responsibilities differ. Do not add DTO conversions that merely rename identical data.
+- Accept dependencies at genuine I/O boundaries. A trait can earn its place through a current test, security, or substitution requirement; neither one implementation nor a mock automatically justifies it.
+- Prefer borrowed inputs and owned values at task boundaries. Do not scatter `clone`, `Arc<Mutex<_>>`, or allocations merely to satisfy the compiler; identify the required ownership and lifetime first.
+- Inherit workspace lint policy. Keep suppressions narrow and explained. Secrets should not derive ordinary `Debug` or `Serialize`; redacted wrappers must preserve that guarantee through nested types.
 
-```toml
-# Cargo.toml
-[workspace]
-resolver = "3"
-members = ["crates/domain", "crates/server"]
+## HTTP extraction and transaction lifetime
 
-[workspace.package]
-edition = "2024"
-rust-version = "1.98"
+Axum evaluates extractors in argument order; a body-consuming extractor must be last. A `FromRequestParts` extractor that opens a transaction therefore runs before a later `Json<T>` finishes reading the body. That can hold a connection while a slow client uploads. [Axum extraction](https://docs.rs/axum/latest/axum/extract/index.html)
 
-[workspace.lints.rust]
-unsafe_code = "forbid"
+Choose the existing project's verified approach:
 
-[workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
-unwrap_used = "warn"
-expect_used = "warn"
+1. Extract bounded metadata and identity without retaining a transaction; parse bounded JSON; then begin the business transaction, resolve current authorization facts, and mutate.
+2. Use a deliberate composite `FromRequest` extractor that bounds/parses the body before acquiring the transaction and authorization context.
 
-[profile.release]
-lto = "thin"
-codegen-units = 1
-strip = true
-```
+Do not reorder `Json` before a parts extractor and assume the handler will compile. Keep early authentication/rate limits, body limits, and body-read deadlines at the appropriate ingress layer. Authentication may use short database reads; it must not retain a business transaction during body reception.
 
-```toml
-# clippy.toml — una transacción sólo se abre en db.rs. En cualquier otro sitio es un error de lint.
-disallowed-methods = [
-    { path = "sqlx_core::pool::Pool::begin", reason = "open company transactions through db::TenantTx" },
-]
-```
+Within the handler: enter context → stabilize facts → apply the policy → write → audit/outbox → commit → respond. Map extractor, query, and commit failures through the established error contract. A typed permission marker helps only if constructors and alternate routes cannot bypass it; route coverage and policy tests remain necessary.
 
-```toml
-# .cargo/config.toml
-[env]
-TS_RS_EXPORT_DIR = { value = "web/src/lib/api/contract", relative = true }
-SQLX_OFFLINE = "true"
-```
+## SQL and generated contracts
 
-- Las dependencias se declaran en `[workspace.dependencies]` con las features mínimas (`default-features = false` donde el crate lo permite).
-- `domain` depende de serde, ts-rs, uuid, thiserror y poco más. No conoce tokio, sqlx ni axum.
-- Un `#[allow(...)]` siempre lleva `reason = "…"`.
+- Prefer SQLx checked macros when the repository uses them. Keep `.sqlx` metadata consistent with the target schema, features, and queries; regenerate through the project's command rather than editing metadata.
+- Bind values. For dynamic filters or sorting, use supported query builders and allowlisted SQL structure; placeholders cannot bind identifiers.
+- Execute atomic work through the transaction connection. A pool call inside that flow silently escapes atomicity and transaction-local tenant context.
+- Return the intended public projection with `RETURNING` when possible. Check optional rows and affected counts according to the operation's semantics.
+- Do not force nullable columns to non-null merely to silence inference. An override needs a query-level invariant and a relevant test.
+- Preserve runtime wire semantics: decimal strings, timestamp offsets, optional versus null fields, enum encoding, and integer precision. Check generation drift with the repository's existing tooling.
 
-## 2. `domain`: tipos que sólo existen válidos
+An uncommitted SQLx transaction initiates rollback when dropped. This protects normal abandonment; it does not prove a disconnected client means a commit failed. Resolve ambiguous mutation outcomes through idempotency. [SQLx transactions](https://docs.rs/sqlx/latest/sqlx/struct.Transaction.html)
 
-```rust
-//! Validated values. A type here can only be built through `parse`, so
-//! anything that reaches the server's logic is already correct: parse, don't
-//! validate. Messages are user-facing Spanish.
+## Async, cancellation, and shutdown
 
-macro_rules! text_type {
-    ($(#[$doc:meta])* $name:ident, $max:literal) => {
-        $(#[$doc])*
-        #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
-        #[serde(try_from = "String", into = "String")]
-        pub struct $name(String);
+- Avoid blocking or sustained CPU work on the async executor. Bound expensive work before scheduling it; a large blocking thread pool is not a concurrency budget.
+- Acquire an owned semaphore permit before `spawn_blocking`, move it into the closure, and retain it until the computation finishes. Dropping the request or its join handle must not release capacity while the computation continues.
+- Started `spawn_blocking` tasks cannot be aborted. A timeout stops waiting, not computation. Use cooperative cancellation or a supervised process when hard termination is required. [Tokio blocking tasks](https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html)
+- Never hold a synchronous mutex guard across `.await`. Choose synchronization according to contention and I/O needs, not as a default wrapper around all state.
+- Bound fan-out and channels. Track spawned work, propagate cancellation safely, and handle join failures; do not detach required work with unobserved `tokio::spawn`.
+- On shutdown, stop accepting work, stop claiming jobs, allow bounded draining, and leave unfinished durable work recoverable. A shutdown deadline cannot terminate already running blocking tasks.
+- Trace request/job identity, error category, durations, and relevant resource waits. Redact request bodies and secrets; keep metrics labels bounded.
 
-        impl $name {
-            pub const MAX_CHARS: usize = $max;
+## Verification
 
-            pub fn parse(value: &str) -> Result<Self, Invalid> {
-                clean_text(value, $max).map(Self)
-            }
-
-            #[must_use]
-            pub fn as_str(&self) -> &str {
-                &self.0
-            }
-        }
-        // + TryFrom<String>, From<$name> for String, Display
-    };
-}
-
-text_type!(BranchName, 80);
-text_type!(
-    /// Why a comprobante is annulled (SUNAT RA: up to 100 characters).
-    AnnulReason, 100
-);
-```
-
-- Los cuerpos de request llevan estos tipos: un valor malo falla al deserializar y el servidor responde 400 con el JSON Pointer del campo.
-- `Password` y `Secret` no implementan `Serialize`.
-- Un enum de dominio expone `ALL`, `key()`, `from_key()` y su `label()` en español: la base guarda la clave y el catálogo vive en el código.
-- El contrato vive en `contract.rs`, cada tipo con `#[derive(TS)]` y `#[ts(export)]`. `cargo test -p domain` regenera el TypeScript, que nunca se edita a mano.
-
-## 3. Tabla de rutas: el permiso viaja en el tipo
-
-```rust
-/// Company routes, under `/api/t/{slug}`: each names its requirement, the
-/// "Permiso" column of docs/API.md.
-fn tenant_routes() -> Router<AppState> {
-    Router::new()
-        .route(
-            "/branches",
-            get(branches::list::<need::BranchesView>)
-                .post(branches::create::<need::BranchesManage>),
-        )
-        .route("/branches/{code}", put(branches::update::<need::BranchesManage>))
-}
-```
-
-```rust
-/// What a route demands of the member, beyond being an active one.
-pub trait Requirement {
-    fn met_by(actor: &Actor) -> bool;
-}
-
-/// An authorized member of one company, holding the request's transaction.
-/// Handlers commit it (`tenant.tx.commit()`); dropping it rolls back.
-pub struct Tenant<P> {
-    pub tx: TenantTx,
-    pub ctx: Context,
-    need: PhantomData<fn() -> P>,
-}
-```
-
-Un handler no puede obtener un `Tenant` sin un requisito: olvidar el permiso no compila. La tabla de rutas es el espejo de la columna "Permiso" de `docs/API.md`.
-
-## 4. Handler
-
-```rust
-/// `PUT /api/t/{slug}/branches/{code}`. The establishment code is fixed.
-pub async fn update<P: Requirement>(
-    mut tenant: Tenant<P>,
-    Code(code): Code,
-    Json(body): Json<UpdateBranch>,
-) -> AppResult<Json<BranchView>> {
-    let branch = sqlx::query_as!(
-        BranchView,
-        "UPDATE branches
-            SET name = $3, address_line = $4, ubigeo = $5, is_active = $6
-          WHERE code = $1 AND tenant_code = $2
-          RETURNING code, name, establishment_code, address_line, ubigeo, is_active",
-        code,
-        tenant.tx.tenant_code(),
-        body.name.as_str(),
-        body.address_line.as_ref().map(AddressLine::as_str),
-        body.ubigeo.as_ref().map(Ubigeo::as_str),
-        body.is_active,
-    )
-    .fetch_optional(tenant.tx.conn())
-    .await?
-    .ok_or(ErrorCode::NotFound)?;
-
-    audit::record(
-        &mut tenant.tx,
-        Action::BranchUpdated,
-        Some(code),
-        json!({ "name": branch.name, "is_active": branch.is_active }),
-    )
-    .await?;
-
-    tenant.tx.commit().await?;
-
-    Ok(Json(branch))
-}
-```
-
-Lo que enseña:
-
-- El archivo abre con `//!`: qué regla guarda y quién la protege ("Rule 8 belongs to the database (`branches_structure`, checked at COMMIT)").
-- El SQL vive en el handler y mapea directo al tipo del contrato (`BranchView`): no hay DTO intermedio ni repositorio.
-- `WHERE code = $1 AND tenant_code = $2`, aunque RLS ya aísle.
-- `fetch_optional … ok_or(ErrorCode::NotFound)?`: sin fila, 404.
-- La auditoría va en la misma transacción y el `commit` es explícito.
-- El handler no comprueba "al menos una sede activa": lo hace PostgreSQL al COMMIT y `error.rs` lo traduce.
-- Una request que llama a la red autoriza en una transacción de lectura, la cierra, llama, y vuelve a entrar con `Tenant::enter(…)` para escribir.
-
-## 5. Política: una pregunta por decisión
-
-```rust
-// handler: cargar hechos, preguntar una vez, escribir
-let target = fetch_for_update(&mut tenant.tx, &tenant.ctx.actor, viewer, code).await?;
-let role = roles::assignable(&mut tenant.tx, body.role_code).await?;
-let reach = branches::requested_reach(&mut tenant.tx, body.all_branches, &body.branch_codes).await?;
-
-tenant.ctx.actor.may_edit_member(&target.facts, Some((&role.facts, &reach)))?;
-
-// lista: el mismo método calcula lo que la UI muestra
-can_edit: actor.may_edit_member(&facts, None).is_ok(),
-```
-
-Cada `may_*` de `domain::access::Actor` devuelve `Result<(), Denial>` y aplica juntas todas sus reglas (cobertura de permisos, regla del propietario, alcance de sedes). `impl From<Denial> for AppError` convierte la negación en su código. La matriz se prueba unitaria en `domain`.
-
-## 6. Errores
-
-```rust
-pub enum AppError {
-    /// A client-facing error: code, Spanish message, optional pointer.
-    Api { code: ErrorCode, message: Cow<'static, str>, pointer: Option<String>, retry_after: Option<u64> },
-    /// 503 `unavailable`; the reason goes to the log.
-    Unavailable(&'static str),
-    /// 500 `internal_error`; the cause goes to the log.
-    Internal(BoxError),
-}
-
-AppError::invalid("/branch_codes/2", "La sede no existe o está inactiva.") // 400 con pointer
-ErrorCode::NotFound.into()                                                 // mensaje por defecto
-```
-
-```rust
-impl From<sqlx::Error> for AppError {
-    fn from(error: sqlx::Error) -> Self {
-        // SQLSTATE: una carrera que perdió, o la base que va atrasada.
-        //   "40P01" | "40001" | "55P03" → Conflict        "57014" → Unavailable
-        let mapped = match constraint(&error) {
-            Some("memberships_keep_owner") => Some(E::LastOwner.into()),
-            Some("invitations_pending_email_uq") => {
-                Some(Self::pointed(E::InvitationPending, "/email", message(E::InvitationPending)))
-            }
-            // The same draft sent twice at once: one wins.
-            Some("documents_request_key_uq" | "payments_request_key_uq") => Some(E::Conflict.into()),
-            _ => None,
-        };
-        mapped.unwrap_or_else(|| Self::Internal(error.into()))
-    }
-}
-```
-
-- `ErrorCode` vive en el contrato (se exporta a TypeScript) y `ErrorCode::status()` da su único estado HTTP.
-- Un código nuevo llega completo en el mismo cambio: la variante, su estado, su mensaje en español, su título en la SPA (el mapa exhaustivo rompe el build si falta) y su fila en la tabla de errores de la spec.
-- Un 5xx nunca lleva la causa en el cuerpo: viaja al log en la línea de la request.
-
-## 7. SQL con sqlx
-
-- Sólo `sqlx::query!`, `query_as!` y `query_scalar!`: se verifican al compilar contra `.sqlx/`.
-- Lotes con arrays: `code = ANY($2)` para leer, `SELECT $1, $2, unnest($3::uuid[])` para insertar. Nunca una consulta dentro de un bucle.
-- `r#"SELECT … AS "name!""#` cuando sabes que una columna no es nula y sqlx no puede inferirlo.
-- Tras cambiar SQL o esquema: `cargo sqlx prepare --workspace -- --all-targets`, y `.sqlx/` se versiona. No se edita a mano.
-- Las listas usan los helpers de cursor de `db.rs` (`PAGE_SIZE`, `next_cursor`); no inventes otra paginación.
-
-## 8. Async y recursos
-
-- Lo que consume CPU (argon2) va en `spawn_blocking`, tras un semáforo que acota cuántos corren a la vez.
-- Nada de `unwrap` ni `expect` fuera de los tests y del arranque: `?` con `AppError`, u `ok_or`.
-- El cuerpo tiene tope (64 KiB) y plazo (5 s), la request un presupuesto (15 s) y el pool un `acquire_timeout`.
-- `#[must_use]` en constructores y consultas puras.
-- La configuración se lee una vez al arrancar a un `Config`; si falta algo, el proceso no arranca.
-
-## 9. Pruebas
-
-```rust
-#[sqlx::test(migrator = "server::MIGRATOR")]
-async fn a_cashier_has_one_shift_open(options: PgPoolOptions, connect: PgConnectOptions) {
-    let app = app(options, connect).await;
-    let (owner, slug) = cash_company(&app).await;
-    // …
-    // Two tabs at once: one shift, whatever the timing.
-    let (one, two) = tokio::join!(
-        open(&app, &owner, &slug, &principal, "100.5"),
-        open(&app, &owner, &slug, &principal, "100.5"),
-    );
-    let (opened, refused) = if one.status == StatusCode::CREATED { (one, two) } else { (two, one) };
-    assert_eq!(opened.status, StatusCode::CREATED, "{}", opened.body);
-    assert_eq!(refused.code(), "conflict");
-}
-```
-
-- Cada test recibe una base nueva, un pool que corre con el rol de la aplicación como en producción, y maneja el router real con cookies reales.
-- El nombre del test es la regla, como frase. Se afirma sobre el estado HTTP, `error.code` y `error.pointer`.
-- Una prueba por invariante de la spec, con su carrera (`tokio::join!`), y una por familia de rutas para el cableado.
-- Lo externo se prueba con un cliente falso; ningún test sale a la red.
-
-## 10. Checks (todos en verde)
+Use repository commands and production-equivalent database privileges. Candidate checks, only where configured:
 
 ```bash
-cargo fmt --all
+cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace            # regenera también el contrato TypeScript
+cargo test --workspace
 cargo sqlx prepare --workspace --check -- --all-targets
-pnpm --dir web run check && pnpm --dir web run build
 ```
 
-Con `rtk` instalado, antepónlo a los comandos de salida larga (`rtk cargo test`, `rtk cargo clippy`).
+Check the real features and targets used in CI; do not force incompatible `--all-features`. Exercise rejection mapping, invalid input, commit failure, cancellation, and authorization wiring where changed. SQLx test databases must be disposable and separate from application data. Coordinate concurrent tests with barriers or observable lock state rather than assuming scheduling overlap.

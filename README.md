@@ -1,42 +1,55 @@
-# elskill — las skills de Elias
+# elskill
 
-Tres skills que le dicen a cualquier agente (Claude Code, Codex, opencode) cómo se decide y se construye software en estos proyectos. Salen de las reglas que ya gobiernan `core-rs`, `lumi-ui`, `faztore`, `coedula`, `aeduca`, `fact` y `see-php`.
+Three coordinated skills for building web software with explicit ownership, reliable Rust backends, and usable interfaces. Instructions, examples, and metadata are in English. Product copy follows the application's own language requirements.
 
-| Skill | Cuándo se carga | Qué fija |
+| Skill | Use it for | What it owns |
 | --- | --- | --- |
-| [`el-architecture`](el-architecture/SKILL.md) | Antes de cualquier tarea de código; es la entrada | El dueño único de cada regla, las capas prohibidas, el protocolo de sesión, cuándo detenerse y qué es terminado |
-| [`el-backend`](el-backend/SKILL.md) | Servidor, SQL, migraciones, workers, permisos | PostgreSQL dueño de los invariantes, una transacción por request, contrato y errores tipados, seguridad, rendimiento y pruebas |
-| [`el-design`](el-design/SKILL.md) | Pantallas, formularios, diálogos, estilos, copy | Svelte 5 con Lumi, anatomía de página, estados obligatorios, ciclo de vida de diálogos, accesibilidad y peso |
+| [el-architecture](el-architecture/SKILL.md) | Cross-layer implementation, architecture, refactoring, review | Execution contract, ownership, scope, evidence, completion |
+| [el-backend](el-backend/SKILL.md) | Rust HTTP, SQL, authorization, migrations, workers | Integrity, atomicity, concurrency, contracts, bounded resources |
+| [el-design](el-design/SKILL.md) | Screens, forms, interactions, responsive UI | Task clarity, state transitions, accessibility, visual verification |
 
-Cada `SKILL.md` trae sus reglas numeradas (`A…`, `B…`, `D…`) y basta por sí solo para trabajar bien. Las `references/` añaden el detalle por stack y los fragmentos reales de core-rs; el agente lee sólo la que su tarea necesita.
+Load architecture once for shared decisions, then the relevant domain skill. Each skill routes to focused references only when needed. Existing frameworks and design systems remain authoritative; Rust/axum/sqlx/PostgreSQL and Svelte/Lumi have dedicated guidance, not universal mandates.
 
-## Instalar
+## Install
 
 ```bash
 ./install.sh
+./install.sh --opencode
 ```
 
-Crea enlaces en `~/.claude/skills` (lo leen Claude Code y opencode) y en `~/.codex/skills`. Son enlaces a esta carpeta: editar aquí actualiza todas las herramientas. Con `./install.sh --opencode` enlaza además en `~/.config/opencode/skills`, por si desactivaste la compatibilidad de opencode con las skills de Claude.
+The installer links the three skill folders into `~/.claude/skills` and `${CODEX_HOME:-~/.codex}/skills`. The optional flag also links `~/.config/opencode/skills`. Existing non-symlink entries are skipped. Links point here, so repository edits update the installed content. Keep this checkout available.
 
-Para un solo proyecto, enlaza o copia las carpetas `el-*` en su `.claude/skills/` o `.agents/skills/`.
+For project-local installation, place the three sibling skill folders in the project's supported skills directory. Keep them together: domain skills link to the architecture workflow. No external skill repository, paid model, or downloaded executable is required.
 
-Si quieres que Codex las use siempre, cambia la línea de `~/.codex/AGENTS.md` por:
+## Use
+
+Select the relevant skill in your agent, or name it explicitly, for example:
 
 ```text
-For code work in my projects, use the `el-architecture` skill first, then `el-backend` or `el-design` as the task requires. Where a project's AGENTS.md conflicts with them, the project's rules win.
+Use $el-architecture and $el-backend to fix duplicate payment submissions.
+Trace the write path, preserve the existing contract, and demonstrate safe retries.
 ```
 
-`senior-code-quality` sigue sirviendo para código ajeno; en estos proyectos, las `el-*` la reemplazan.
+```text
+Use $el-design to improve this order form within the existing design system.
+Verify keyboard use, failed submission recovery, and the rendered mobile layout.
+```
 
-## Usar
+The workflow is **observe → define outcome and proof → change the owner → verify → review the diff**. Routine edits stay routine. Architecture rule IDs (`A1`–`A25`), backend IDs (`B1`–`B47`), and design IDs (`D1`–`D49`) remain stable for reviews; several formerly absolute rules now state their actual applicability.
 
-- Se cargan solas por su descripción. Para forzarlas: `$el-backend` en Codex, `/el-backend` en Claude Code, o nombrarlas en el pedido.
-- En una revisión, pide los hallazgos citando la regla violada (`A11`, `B12`, `D6`).
-- El `AGENTS.md` y el `docs/SPEC.md` de cada proyecto ganan siempre a estas skills.
+## Maintain and evaluate
 
-## Mantener
+```bash
+python3 scripts/check.py
+bash -n install.sh
+```
 
-- El bloque **Núcleo** es idéntico en los tres `SKILL.md`: si lo cambias, cámbialo en los tres.
-- Una regla nueva entra cuando un proyecto la ganó de verdad, con su porqué, y en una sola skill.
-- No renumeres las reglas existentes: los informes y las revisiones las citan. Las nuevas van al final de su sección.
-- Mantén cada `SKILL.md` corto. El detalle de un stack va en `references/`.
+Structural checks validate the package, not a model's engineering judgment. Use the [behavioral scenarios](evals/scenarios.md) to evaluate decisions and observable outcomes. Compare baseline and skill-assisted runs on the same task and artifacts before claiming a quality gain; no model benchmark is claimed here.
+
+Keep one owner per instruction. Add a rule only for a demonstrated decision or failure mode; place conditional detail in its reference. Preserve existing rule IDs and remove superseded guidance. Do not copy another product's versions, budgets, paths, locale, or approval workflow into general rules.
+
+Research and adoption decisions are recorded in [SOURCES.md](SOURCES.md), including pinned revisions of all four requested repositories. The resulting guidance is an original synthesis, not a bundled copy of those skill packs.
+
+## Model context
+
+The requester identified “Claude Fable 5.2 Fable” and a $25 cost; no billing basis or capability benchmark was supplied. Model selection belongs to the host environment. These skills do not depend on that identifier, price, or a superiority claim: completion requires the same observable evidence from any model.

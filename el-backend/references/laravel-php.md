@@ -1,79 +1,36 @@
-# Laravel y PHP (aeduca, fact, see-php)
+# Laravel and PHP
 
-Manda el `AGENTS.md` y el `docs/SPEC.md` de cada proyecto; esto resume lo que comparten.
+Read for an existing Laravel application or PHP integration service. Resolve versions, model ownership, policies, middleware, database conventions, and checks from the project. Preserve its accepted framework boundaries.
 
-## Laravel + Inertia + Svelte (aeduca, fact)
+## Laravel application
 
-### Los dueños que ya existen
-
-| Responsabilidad | Dueño |
+| Responsibility | Typical owner; verify locally |
 | --- | --- |
-| Credenciales de acceso | `AuthAccount` |
-| Identidad del personal | `User` |
-| Autorización | Roles, concesiones directas, alcance y `PermissionDependency` (`PermissionResolver` en fact) |
-| Sede de la sesión | `BranchContext` |
-| Escritura de un agregado, transacción o invariante real | Un `Action` enfocado |
-| Normalización y forma de la entrada | `FormRequest` |
-| Componer consultas, actions y la respuesta Inertia | El controller |
-| Interacción y presentación | Svelte sobre Lumi |
+| Authentication and session | Existing guard, account model, and middleware |
+| Authorization and scope | Policy or established permission resolver |
+| Input shape and normalization | FormRequest or established parser |
+| Atomic use case | Focused Action or application service |
+| Simple persistence | Existing Eloquent model/query path |
+| HTTP or Inertia response | Controller and explicit resource projection |
 
-Extiende estos dueños. No añadas un segundo sistema de autenticación, un paquete de autorización, un store de permisos o de sede en el cliente, una capa de repositorios, `Services/` genérica, `Domains/`, un framework de módulos ni CQRS.
+Extend the actual owners. A trivial write does not require a new Action, repository, DTO package, or generic service. Conversely, retain existing modules that own real transactional or domain behavior. Do not hide required business effects in model observers or unobserved events.
 
-### Forma
+- Authorize server actions independently of UI visibility. Centralize permission implications, tenant scope, branch context, and delegation rules; do not repeat role checks in controllers.
+- Use the existing transaction owner for related writes, audit, and outbox records. Pass the intended connection throughout and do not call external services while holding database locks.
+- Apply database constraints to persistent invariants; validation rules alone do not prevent concurrent duplicates. Translate structural database errors through the project's error contract.
+- Use explicit writable fields and response projections. Guard against mass assignment and accidental exposure of password hashes, tokens, or administrative attributes.
+- Bound list queries and eager loading. Eager-load required relationships to prevent N+1 work, but do not load entire histories for a summary.
+- Queue dispatch after commit prevents premature execution but is not an atomic durable handoff by itself. Use an outbox when losing the required job between commit and dispatch would violate the business contract.
+- Keep posted financial and audit facts traceable; follow domain-specific lifecycle rules rather than applying generic soft deletion everywhere.
 
-- Un dueño y un camino de escritura por responsabilidad.
-- `Action` para la escritura de un agregado, una transacción o un invariante real. El alta o la edición de una fila simple y validada va directa con Eloquent.
-- Prohibido: repositorios genéricos, services que lo hacen todo, Actions base, librerías de DTO que renombran arrays, wrappers de consulta para consultas simples, event sourcing.
-- Subcarpetas y abstracciones compartidas sólo cuando el contenido actual lo demuestra. Un archivo cohesivo no se parte para bajar líneas.
-- Una consecuencia obligatoria es una llamada directa. Los eventos exigen consumidores independientes; un observer nunca esconde un flujo crítico.
+## Stateless PHP integration
 
-### Datos
+Keep durable business memory in its established owner. A signing or transport service may accept a strict request, produce or transmit an immutable artifact, and return a typed outcome without acquiring its own database or session system.
 
-- PK UUID `code`; FK `<entidad>_code`. Ningún identificador técnico codifica año, sede, nivel o estado.
-- Relaciones con FK o tabla intermedia; nunca arrays, JSON ni polimorfismo manual `type`/`code`.
-- PostgreSQL es dueño de FK, UNIQUE y CHECK con nombre.
-- Un read model estable que usan listas, búsquedas, perfiles o reportes es una vista SQL con nombre; Laravel sigue autorizando, acotando, filtrando y paginando.
-- Una generación o reserva atómica (un código correlativo) es una función SQL enfocada, explicable y probada.
-- El CRUD simple se queda en Eloquent: no envuelvas cada insert en una vista o función ni escondas flujos en SQL.
-- Las escrituras de negocio sobre varias tablas son transaccionales.
-- Sin soft delete por defecto, y jamás en lo fiscal.
-- Nunca autorices por nombre ni por código de rol. Autorización, pagos y caja no se esconden en triggers.
+Use supported strict types and narrowly scoped dependencies. Parse input once; keep exact amounts and external codes lossless. Sensitive parameters and redacted logs reduce leakage but do not encrypt storage or guarantee memory erasure. Inspect the dependency's actual signature and transport behavior before changing integration code.
 
-### Permisos y rendimiento
+A retry sends the persisted artifact and provider idempotency identity. Timeout, unknown outcome, accepted, and rejected are distinct states; the business owner reconciles uncertainty. Do not infer success from transport completion alone.
 
-- `dominio.view` y `dominio.manage`; `manage` incluye `view` por el dueño de dependencias que ya existe. Ningún permiso por botón, campo o pestaña.
-- El autoservicio de una persona se autoriza por identidad y pertenencia, no concediéndole un permiso administrativo.
-- Sin N+1 ni eager loading innecesario. Las listas cargan los campos que muestran y resúmenes acotados; el detalle compone un perfil con consultas enfocadas.
-- Sin caché persistente de permisos, sedes o catálogos sin medición.
+## Verification
 
-### Base de datos y cierre
-
-```bash
-php artisan migrate:fresh --seed --env=testing   # tras cambiar esquema o seeds
-composer run format
-composer run check
-pnpm run build
-```
-
-El desarrollo y los tests usan la base `<proyecto>_test`. Nunca `migrate:fresh` contra la base principal, ni migrarla para probar una dirección sin terminar.
-
-## PHP sin framework: motor sin estado (see-php)
-
-1. **Sin estado.** Ni base de datos, ni colas, ni sesiones, ni disco de negocio. Si algo necesita recordar, es del core.
-2. **Firmar una vez.** Ninguna ruta regenera un XML ya firmado; enviar sólo transporta bytes que se verifican antes de salir.
-3. **Códigos externos como texto.** Nunca `(int)` sobre un código. Interpretarlo es trabajo del core.
-4. **Secretos** con `#[SensitiveParameter]`: viven una request y jamás tocan un log, un error ni el disco.
-5. **Contrato estricto.** Todo campo pasa por un único lector de entrada: claves desconocidas rechazadas, montos como string, errores con JSON Pointer.
-6. **Forma.** `declare(strict_types=1)`, clases `final` y `readonly`, sin framework ni capas especulativas. La librería externa se importa sólo en los módulos que la envuelven.
-7. Antes de tocar plantillas, firma o transporte, lee el código de la librería en `vendor/`: su comportamiento real manda, su documentación no.
-
-Pruebas y cierre:
-
-- CI nunca llama al servicio externo: se prueba con un cliente falso.
-- Un ejemplo nuevo del contrato llega con su golden. Los goldens se regeneran sólo a propósito, y su diff se revisa como un cambio fiscal.
-- Una regla aprendida del servicio externo entra con su test, su fila en la spec y su evidencia en `STATUS.md`.
-
-```bash
-composer format
-composer check     # pint --test · phpstan max · phpunit
-```
+Use Composer/package scripts and the project's static analysis, formatting, tests, and frontend build. Confirm the actual database target before running destructive setup such as `migrate:fresh`; an environment label alone is not proof of isolation. Tests use disposable databases and fake external providers. Review changed contract fixtures and signed-artifact goldens as behavioral evidence rather than regenerating them blindly.

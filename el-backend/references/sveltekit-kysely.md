@@ -1,61 +1,26 @@
-# SvelteKit + Kysely (faztore, coedula)
+# SvelteKit and Kysely
 
-Monolitos SvelteKit con PostgreSQL y Kysely. Su arquitectura ya está aceptada: el objetivo es **terminarla, no sustituirla** por la de core-rs. Manda el documento del proyecto (`docs/ARCHITECTURE.md` en coedula, `docs/Architecture.md` en faztore); esto es el resumen de lo que comparten.
+Read when the existing server uses this stack. Inspect route siblings, hooks, `locals`, authorization, parsers, repositories, and package versions. Preserve accepted boundaries; do not transplant a Rust service layout into a working monolith.
 
-## Flujo de capas
+## Request ownership
 
-```text
-ruta (+page.server.ts | +server.ts)
-  → locals.can(...)                      el permiso, al entrar en cada rama sensible
-  → parser del form o loader del querystring
-  → service      sólo si orquesta, transacciona o comparte una regla
-  → repository   SQL + mapeo a DTO, un agregado por repositorio
-  → $lib/types/<dominio>
-```
+A route coordinates HTTP, authentication, parsing, and the framework response. An existing repository owns SQL and aggregate mapping. An application service earns its place through orchestration, atomicity, or a shared rule; simple validated writes do not need a pass-through service.
 
-- **Un service no es ceremonia.** Un insert validado es parser + repository. Un `XService.create` que sólo llama a `XRepository.create` está prohibido.
-- La ruta hace permiso, cableado y `fail` / `redirect`. Cero SQL en la ruta si el repositorio ya existe.
-- Las carpetas nombran responsabilidades. No crees `services/forms/`, `modules/` ni estructuras Clean o Hexagonal.
-- **Corte atómico:** mover o borrar el original en el mismo cambio y actualizar a todos los callers. Sin barrels de compatibilidad, sin `deprecated`, sin facade temporal. Si no cabe entero, se omite.
-- Antes de editar una superficie, busca sus callers con grep.
+- Authorize every sensitive `load`, action, and endpoint. A parent layout check or client capability does not secure a direct action request.
+- Reuse the project's request parser and domain vocabulary. Bound form data and query parameters; preserve original drafts when returning validation errors.
+- Put dependent writes in a Kysely transaction and pass its executor to all participating operations. Using the root database object inside the callback escapes that transaction.
+- Revalidate mutable authorization facts inside the protected mutation boundary when concurrent changes matter.
+- Inspect affected rows according to the operation contract. Map expected SQLSTATE and constraint names; unexpected errors remain internal.
+- Keep credentials, database handles, and private projections out of returned page data. Use server-only modules and the framework's established serialization boundary.
 
-## Cada escritura
+## Data and UI integration
 
-1. `locals.can(...)` en el `load` y en cada action o endpoint. El `can()` del cliente sólo decide qué se muestra.
-2. Normaliza la entrada con los helpers del proyecto (campos de formulario, trim, DNI, fechas de Lima).
-3. Valida requeridos, UUID y FK **antes** de escribir.
-4. Ejecuta el repositorio o el service y comprueba las filas afectadas: 404 si no tocó ninguna.
-5. Más de una escritura que debe ir junta: `locals.db.transaction().execute(...)`.
-6. Lo esperado responde `fail(400 | 403 | 404, { error })`, sin filtrar detalles internos.
-7. Los errores de PostgreSQL se reconocen por código (`pgErrorCode`, `PG_UNIQUE_VIOLATION`, `PG_FOREIGN_KEY_VIOLATION`), nunca por su texto.
-8. Jamás `password_hash` ni otro secreto en `PageData`.
+Use the existing migration and database-type generation commands; never edit generated types. Follow the [PostgreSQL reference](postgres.md) for concurrency, RLS, and migrations. Bulk related writes, scope by tenant and operational location, and paginate growing results.
 
-## Datos
+Prefer the established form-action and progressive-enhancement path. Return field/form errors through the project's `fail` convention and preserve redirect/error control flow; a broad catch must not swallow framework redirects. Invalidate the data owner whose result changed using established dependency keys. Do not create a second HTTP client or local cache to imitate a separate API architecture.
 
-- Línea base en `database/init/*.sql`; para bases ya creadas, además `database/migrations/NNNN-descripcion.sql`.
-- Después de cambiar el esquema: aplica el SQL y corre `pnpm run db:generate`. `src/lib/database/types.ts` se genera y nadie lo edita a mano.
-- Al reemplazar una vista, las columnas nuevas van al final.
-- Las lecturas operativas se acotan a la sede de trabajo del usuario cuando el flujo es de una sede.
-- Inventario y caja: los movimientos son el libro; el estado actual se deriva o se mantiene sólo dentro de la operación del repositorio que escribe el movimiento.
-- Varias líneas se procesan por lote dentro de la transacción; los bloqueos siguen siempre el mismo orden (por variante).
-- Los endpoints públicos usan su propio repositorio y DTO explícitos; nunca una vista de administración.
+Request-scoped user data must not live in shared server module state. Test two users or tenants in the same process and stale client responses during navigation when these paths change.
 
-## Permisos
+## Verification
 
-Respeta el catálogo del proyecto: coedula usa `<entidad>:read|create|update|delete`, más un permiso especial sólo cuando existe la operación (`approve`, `export`). El bypass de superadministrador está centralizado: no lo reimplementes.
-
-## Cliente
-
-- Formularios Lumi con `use:enhance`; toast al éxito; `invalidate` con la misma clave que declaró `depends`.
-- El estado de página son runes, no `writable()`.
-
-## Cierre
-
-```bash
-pnpm run check        # faztore: svelte-check + oxlint + prettier
-npm run lint:fix && npm run check    # coedula
-pnpm run db:generate  # tras cambiar el esquema
-pnpm test             # faztore: las suites de base usan bases desechables propias
-```
-
-Las suites de base de datos nunca usan el `DATABASE_URL` de la aplicación. En coedula la base local es `psql -d coedula`, no Docker.
+Read package scripts and CI to select type, lint, build, generation, and integration checks. Use a confirmed disposable database with production-equivalent grants; the application's `DATABASE_URL` is not a test target by default. Test direct unauthorized action calls, malformed input, rollback, and the resulting page state through public interfaces.

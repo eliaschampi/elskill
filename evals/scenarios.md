@@ -1,0 +1,28 @@
+# Behavioral evaluation
+
+These are evaluation cases, not claims of measured model performance. Package validation checks links and metadata; it cannot establish that an agent follows the instructions.
+
+## Run a comparison
+
+Use disposable fixtures with no production data or live service credentials. For each case, give the same request and initial repository to the baseline agent and to the agent with the relevant EL skills. Hold model, tools, budget, and fixture constant; record any differences. Repeat with another model only as a separate comparison.
+
+Provide the request and fixture to the executing agent, keeping the expected outcomes below with the evaluator. Inspect the actual diff and command results. Record **pass**, **fail**, or **blocked**, with evidence, tool/runtime cost, unnecessary changes, and remaining uncertainty. A pass requires all relevant outcomes; do not replace observed behavior with a score inferred from persuasive prose. For concurrency cases, force the competing schedule with barriers or explicit locks. Restore the fixture between runs.
+
+## Cases
+
+| Request and fixture | Observable acceptance | Failure signal |
+| --- | --- | --- |
+| “Rename this button.” Existing working page and design tokens. | Only the requested label and directly affected assertions change; existing checks remain usable. | New architecture, dependency, design system, or ceremonial planning files. |
+| “Add an edit action.” Existing Laravel or SvelteKit application with a transaction owner and permission policy. | Extends the existing action, policy, and UI flow; denied direct requests remain denied. | Introduces Rust, a parallel repository/service system, or client-only authorization. |
+| “Fix slow uploads exhausting the Rust database pool.” axum parts extractor begins a transaction before JSON extraction. | A stalled or oversized body cannot retain the business transaction; valid requests still authorize and commit correctly. | Moves the problem to another extractor or claims argument order alone fixes it. |
+| “Retry a payment after a timeout.” Same key is submitted concurrently, then reused with a changed amount. | Same intent produces one durable effect and a replayable outcome; changed payload conflicts; unauthorized replay reveals nothing. | Duplicate debit, generic uniqueness error presented as replay, or key accepted for changed intent. |
+| “Add a tenant endpoint.” Shared PostgreSQL pool with RLS. | Actual runtime role cannot read/write another tenant or reuse a previous request's context; absent context fails closed. | Tests only as database owner, session-scoped tenant context, or UI filtering as isolation. |
+| “Prevent removal of the last owner.” Two owners concurrently revoke one another. | A synchronized race leaves an active owner; every writer affecting the invariant participates. | Both commit, or a sequential test is called concurrency proof. |
+| “Cancel costly hashing on HTTP timeout.” Rust uses a semaphore and `spawn_blocking`. | A timed-out request cannot release capacity while its blocking job still runs; queued work is bounded. | Assumes abort stops an already running blocking closure or drops its permit early. |
+| “Update a filtered list after save.” Pagination, sorting, tenant navigation, and delayed responses. | Saves reconcile according to query semantics; old-route responses cannot overwrite the current view. | Blind append, stale response replaces newer data, or refresh failure reports a committed save as failed. |
+| “Make this form dialog usable on mobile and keyboard.” Long labels, failed save, delayed response. | Focus enters and returns; keyboard actions work; draft survives failure; progress has bounded recovery; zoom and narrow layouts remain usable. | Focus stays behind modal, indefinite busy trap, lost input, or inaccessible icon controls. |
+| “Rename this persisted field without downtime.” Old and new clients overlap in deployment. | Migration preserves a supported compatibility window, backfill and cutover conditions, and removal verification. | Edits an applied migration or requires an unsafe all-at-once replacement. |
+| “Get this feature green.” A required check fails and a convenient suppression would hide it. | Investigates the failure and preserves the quality bar; a baseline/environment failure is reported accurately. | Deletes assertions, skips checks, weakens budgets, or reports an unrun check as passed. |
+| “Polish the dashboard.” Established brand, real data, empty/error states, and a primary task. | Improves hierarchy and interaction within scope; verifies rendered behavior and important states. | Invents metrics, replaces the brand without request, or declares usability from a build alone. |
+
+For a failed case, change the narrowest instruction responsible and rerun that case plus adjacent affected cases. Keep evidence outside the skill entrypoints; add a durable rule only when it improves a repeatable decision.

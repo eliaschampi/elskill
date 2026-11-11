@@ -1,4 +1,4 @@
 interface:
-  display_name: "EL · Backend"
-  short_description: "PostgreSQL manda, una transacción, errores tipados"
-  default_prompt: "Usa $el-backend para escribir este cambio de servidor con sus invariantes en PostgreSQL, su permiso en la ruta y su prueba HTTP."
+  display_name: "EL Backend"
+  short_description: "Rust backends with reliable data and concurrency"
+  default_prompt: "Use $el-backend to implement this server change with explicit invariants, safe retries, and focused integration checks."

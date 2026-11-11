@@ -1,168 +1,58 @@
-# Lumi para productos
+# Lumi integration
 
-Qué usar y cómo componerlo. La verdad está en el paquete instalado; esto es el mapa para llegar rápido.
+Read only for a product using Lumi. Inside the Lumi library itself, follow its contributor instructions and preserve domain-neutral component contracts. This is a lookup and integration guide, not a frozen API specification.
 
-**Contenido:** 1. Dónde leer · 2. Montaje · 3. Tema · 4. Estructura · 5. Componente · 6. Clases de composición · 7. Tokens para CSS propio · 8. Escalas · 9. Comportamientos que suelen fallar · 10. Patrones CSS
+## Inspect before composing
 
-## 1. Dónde leer
+Resolve `@lumi-ui/svelte` from the project's package manager and lockfile. Package layouts can change; inspect its export map before assuming a path.
 
-| Necesitas… | Lee |
+| Question | Evidence to inspect |
 | --- | --- |
-| Saber si algo es público | `node_modules/@lumi-ui/svelte/dist/index.d.ts` |
-| Las props de un componente | `dist/components/<Nombre>/types.d.ts`, y su `.svelte` para snippets y callbacks |
-| Un token | `dist/styles/tokens.base.css` |
-| Una clase de composición | `dist/styles/core.css` (`layout.css`, `utilities.css`) y `patterns.css` |
-| Recetas completas | `docs/CONSUMER_REFERENCE.md` del repositorio `lumi-ui`, si está en la máquina |
+| Is the component or helper public? | Package exports and exported type declarations |
+| Which props, snippets, and callbacks exist? | Component declarations and implementation when declarations are incomplete |
+| Which semantic token exists? | Exported token stylesheet |
+| Which composition class exists? | Exported core, layout, utilities, and optional pattern stylesheets |
+| How is it used here? | Nearest working screen and existing local wrapper |
 
-Algunos snippets y callbacks son locales al `.svelte` y no aparecen en `types.d.ts`: cuando importen, abre el componente.
+Typical installed paths include `dist/index.d.ts`, `dist/components/<Name>/types.d.ts`, and `dist/styles/`; confirm them. When available, the library's consumer reference provides recipes. Do not copy a recipe from a different version without checking its contract.
 
-## 2. Montaje
+## Integration owners
 
-```svelte
-<!-- src/routes/+layout.svelte -->
-<script module lang="ts">
-	import { lumiEs, setLumiLocale, type LumiLocaleOptions } from '@lumi-ui/svelte';
+- Import shared styles once at the appropriate layout. Load optional pattern styles only for surfaces that use them; follow the package's documented cascade order.
+- Keep one notification owner and renderer. Use its public API from event handlers instead of creating a toaster per component.
+- Configure locale, currency, time zone, and messages from the product's locale owner. Do not mutate process-global locale per request in SSR; verify the installed locale API's scope.
+- Keep theme seeds in one product theme file. Where supported, `--lumi-brand-primary` and `--lumi-brand-secondary` define brand inputs; derived semantic colors remain library-owned.
+- Use the documented color-scheme controller and pre-paint initialization when present. Avoid duplicated controllers and theme flashes.
 
-	// Module scope: Lumi caches merged copy per messages object.
-	const LUMI_LOCALE: LumiLocaleOptions = {
-		locale: 'es-PE',
-		currency: 'PEN',
-		timeZone: 'America/Lima',
-		messages: lumiEs
-	};
-</script>
+## Choose a public primitive
 
-<script lang="ts">
-	// Tokens and core everywhere; each area's layout adds the patterns it uses.
-	import '@lumi-ui/svelte/styles/tokens.base.css';
-	import '@lumi-ui/svelte/styles/core.css';
-	import '../lumi-theme.css';
-	import '../app.css';
-	import { Toaster } from '@lumi-ui/svelte';
-	import { toaster } from '$lib/toast';
-
-	const { children } = $props();
-	setLumiLocale(LUMI_LOCALE);
-</script>
-
-{@render children()}
-<Toaster {toaster} />
-```
-
-- Los estilos se importan una vez, en la raíz. Una página pública ligera puede cargar sólo `tokens.base.css` y `base.css`.
-- El copy integrado está en inglés hasta que corre `setLumiLocale`; una prop explícita (`placeholder`, `closeLabel`…) siempre gana.
-- Un `createToaster()` por aplicación y un solo `<Toaster>`; `toaster.show({ title, color })` se llama desde los handlers.
-
-## 3. Tema
-
-```css
-/* src/lumi-theme.css — Product theme: Lumi seeds only. */
-:root {
-	--lumi-brand-primary: oklch(0.52 0.18 257);
-	--lumi-brand-secondary: oklch(0.56 0.15 40);
-}
-```
-
-Lumi deriva de las semillas las superficies, los bordes, los rellenos y el modo oscuro. No reasignes tokens derivados `--lumi-color-*` ni redefinas success, warning, danger o info como marca. Claro, oscuro o sistema es un controlador aparte (`@lumi-ui/svelte/color-scheme`): un script previo al pintado y una instancia por aplicación.
-
-Cada rol expone la misma familia: `--lumi-color-{rol}` (borde, foco, ícono), `-solid` (superficie con presencia), `-foreground` (contenido sobre el sólido) y `-bg` (superficie suave). Una superficie rellena usa `solid` con `foreground`.
-
-## 4. Estructura
-
-| Necesitas… | Empieza con |
+| Intent | Candidate to verify |
 | --- | --- |
-| Shell con navegación | `.lumi-dashboard-layout` + `Sidebar` + `Navbar` |
-| Ritmo de una página | `.lumi-stack` + `PageHeader` + `Card` o `DashboardSection` |
-| Filtros junto a resultados | `.lumi-layout--two-columns` + `PageSidebar` |
-| Tarjetas fluidas | `.lumi-grid .lumi-grid--responsive` |
-| Grilla de tarjetas de tablero | `.lumi-grid .lumi-grid--cards` |
-| Columnas fijas en escritorio | `.lumi-grid` + `--columns-2-lg` … `--columns-4-lg` |
-| Tarea enfocada o acceso | `.lumi-centered-layout` + `.lumi-centered-card` |
-| Contenido acotado | `.lumi-container` + un modificador de tamaño |
+| Page context and primary action | `PageHeader` |
+| Related surface or titled section | `Card`, `DashboardSection` |
+| Text, exact input, multiline text | `Input`, appropriate numeric input, `Textarea` |
+| Visible exclusive choice | `Radio`, `SegmentedControl` |
+| Long or remote choice list | `Select`, `RemoteSelect` |
+| Form boolean or immediate setting | `Checkbox`, `Switch` |
+| Column comparison or linear scanning | `Table`, `List`, `ListItem` |
+| Persistent feedback or transient confirmation | `Alert`, existing `Toaster` |
+| Focused interruption or anchored menu | `Dialog`, `Dropdown`, `Context` |
+| Empty, failed, or loading content | `EmptyState`, `ErrorState`, `Skeleton`, `Loading` |
 
-`.lumi-grid` va siempre: un modificador solo no pone `display: grid`. No anides shells ni dupliques el drawer de `PageSidebar`. El disparador móvil de `PageSidebar` va dentro de `.lumi-page-sidebar__header-actions`.
+Candidate names are a search map, not permission to invent props. In particular, verify whether navigation uses `href`, action uses `onclick`, icons accept components, and data tables need an explicit stable `rowKey`.
 
-## 5. Componente
+## Compose with the installed vocabulary
 
-| Necesitas… | Elige |
-| --- | --- |
-| Texto, número o varias líneas | `Input`, `NumberInput`, `Textarea` |
-| Una opción exclusiva y visible | `SegmentedControl`; `Radio` si cada una lleva etiqueta y descripción |
-| Varios interruptores o filtros independientes | `ToggleGroup`; uno solo, `Button pressed` |
-| Elección larga o con poco espacio | `Select`; con búsqueda en el servidor, `RemoteSelect` |
-| Un booleano que se envía o un ajuste inmediato | `Checkbox` o `Switch` |
-| Aviso que persiste o que pasa | `Alert` o `Toaster` |
-| Navegar o actuar | `Button href` o `Button onclick` |
-| Superficie genérica o sección titulada | `Card` o `DashboardSection` |
-| Registros con columnas o filas cortas | `Table`, o `List` con `ListItem`; filas de persona, `UserInfo` |
-| Paginar | `Pagination` (`href` para enlaces rastreables) |
-| Overlay anclado, de puntero, interruptivo o explicativo | `Dropdown`, `Context`, `Dialog`, `Tooltip` |
-| Sin datos, fallo o espera | `EmptyState`, `ErrorState`, `Skeleton` o `Loading` |
-| Un dato con su etiqueta | `InfoItem` |
+Look for existing `lumi-stack`, `lumi-flex`, `lumi-grid`, container, dashboard, and sidebar patterns before custom CSS. Base classes and modifiers may need to be used together; a modifier alone may not establish layout. Match the actual breakpoint definitions rather than copying fixed values from another product.
 
-## 6. Clases de composición
+For custom composition, use verified semantic tokens for spacing, text, surfaces, borders, control size, radius, elevation, focus, and motion. Pair a solid semantic background with its intended foreground. Scope product styles to product elements; do not override private selectors or derived tokens to force a variant.
 
-| Para… | Clases |
-| --- | --- |
-| Ritmo vertical | `.lumi-stack` + `.lumi-stack--{2xs,xs,sm,md,lg,xl}` |
-| Fila flexible | `.lumi-flex` + `--{column,mobile-column,wrap,nowrap,center,between}`, `.lumi-flex--gap-{2xs,xs,sm,md,lg,xl}` |
-| Alinear | `.lumi-align-items--{start,center,end,stretch}`, `.lumi-justify--{start,center,between,end}` |
-| Grilla | `.lumi-grid` + `--{responsive,cards,identity-split,columns-1…4,columns-2-lg…4-lg}`, `.lumi-grid--gap-{sm,md,lg,xl}`, `.lumi-grid-item--span-all` |
-| Espacio | `.lumi-padding--{none,2xs,xs,sm,md,lg,xl}`, `.lumi-margin--none`, `.lumi-margin-{top,bottom}--{2xs,xs,sm,md,lg}` |
-| Texto | `.lumi-text--{xs,sm,lg,xl,2xl,4xl}`, `.lumi-text--{muted,primary,success,warning,danger,info}`, `.lumi-font--{medium,semibold,bold}` |
-| Texto largo | `.lumi-text-ellipsis`, `.lumi-text-break`, `.lumi-text-clamp--{2,3}` |
-| Sólo para lectores de pantalla | `.lumi-sr-only` |
-| Tamaño | `.lumi-width--full`, `.lumi-min-width--0`, `.lumi-max-w--{sm,lg,4xl,prose,full}` |
+## Integration traps to exercise
 
-Cortes responsivos: en 64rem o menos el shell pasa a navbar y contenido y las dos columnas colapsan; en 48rem o menos las grillas van a una columna; en 30rem o menos todo se apila.
-
-Compón con estas clases antes de escribir CSS. No copies sus declaraciones a tu CSS ni apuntes a selectores internos de un componente.
-
-## 7. Tokens para CSS propio
-
-```css
-.account-summary {
-	display: grid;
-	gap: var(--lumi-space-md); /* 2xs … 6xl */
-	padding: var(--lumi-space-sm) var(--lumi-space-md);
-	border: var(--lumi-border-width-thin) solid var(--lumi-color-border);
-	border-radius: var(--lumi-radius-panel);
-	background: var(--lumi-color-surface-raised);
-	box-shadow: var(--lumi-shadow-md);
-	color: var(--lumi-color-text); /* -text-muted, -text-light */
-	transition: var(--lumi-transition-control);
-}
-
-.account-summary a:focus-visible {
-	outline: var(--lumi-focus-outline);
-	outline-offset: var(--lumi-focus-outline-offset);
-}
-```
-
-- Radio por rol: `--lumi-radius-control`, `--lumi-radius-panel`, `--lumi-surface-radius`, `--lumi-radius-full`.
-- Altura de control: `--lumi-control-height-{xs…xl}`.
-- Movimiento: `--lumi-duration-fast` … `--lumi-duration-slower`, `--lumi-easing-default`; prefiere las recetas `--lumi-transition-control` y `--lumi-transition-interactive`.
-- Capas: `--lumi-z-*`.
-- Un número suelto sólo como tamaño de pista de una grilla en `rem`, o dentro de un `calc()` de tokens.
-
-## 8. Escalas
-
-- **Color:** `primary`, `secondary`, `success`, `warning`, `danger`, `info`.
-- **Variante de `Button`:** `filled`, `border`, `flat`, `ghost`, `gradient`. La acción principal es `filled`; cancelar es `border`.
-- **Tamaño:** depende del componente (`Input` de `xs` a `xl`; `Button` de `sm` a `xl`; `Chip` `sm`). Compruébalo en su `types.d.ts`.
-
-## 9. Comportamientos que suelen fallar
-
-- Lumi anima un cambio de `open`: un `Dialog` que monta ya abierto no anima. Monta cerrado y ábrelo.
-- Un `Card` clicable se renderiza como botón: no anides controles interactivos dentro.
-- `ListItem` con `href` u `onclick` usa un área estirada; las acciones de `trailing` siguen siendo hermanos reales.
-- `Table` necesita `rowKey` si los registros no tienen `id` ni `key` estables.
-- Un nombre de ícono como texto no pinta nada hasta registrarlo: pasa el componente.
-- Un control de sólo ícono necesita nombre accesible; un ícono decorativo anidado, no.
-- `Dropdown` y `Context` son menús, no popovers genéricos: conserva sus roles.
-- Los overlays van en portal: no los metas dentro de un padre que recorta.
-- `MessageList` necesita una altura.
-
-## 10. Patrones CSS
-
-`@lumi-ui/svelte/styles/patterns.css` es opcional y trae composiciones neutrales: resumen de filtros (`.lumi-filter-summary`), barras de sección (`.lumi-section-toolbar`, `.lumi-inline-filters`), listas de métricas (`.lumi-metric-rank-list`), filas de ítems (`.lumi-item-row`, `.lumi-item-list`), totales (`.lumi-total-box`), celdas de persona (`.lumi-person-cell`). Impórtalo en el layout del área que lo usa, aplica sus hijos BEM documentados y no inventes modificadores.
+- Verify whether opening animation requires mounting closed and then changing `open`; use the local dialog wrapper if it already owns that behavior.
+- Unmount only at the lifecycle event documented by the installed version. Do not remove a dialog before exit animation or focus restoration completes.
+- Check the rendered element of clickable cards before placing interactive children inside them.
+- Preserve menu semantics in `Dropdown` and `Context`; use a suitable primitive for generic popover content.
+- Check portal and clipping behavior under nested scrolling, near viewport edges, and at zoom.
+- Confirm error messages are associated with inputs and that loading or disabled controls remain understandable.
+- Test theme pairs, long content, keyboard focus, and target widths on the rendered page. Token usage alone does not prove usability or contrast.

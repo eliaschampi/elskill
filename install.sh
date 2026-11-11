@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Enlaza las skills el-* en Claude Code, Codex y opencode. Los enlaces apuntan a
-# esta carpeta: editar aquí actualiza todas las herramientas.
+# Link el-* skills into Claude Code, Codex, and opencode. Links point to
+# this checkout, so edits here update every installation.
 #
-#   ./install.sh             ~/.claude/skills (Claude Code y opencode) y ~/.codex/skills
-#   ./install.sh --opencode  además ~/.config/opencode/skills
+#   ./install.sh             ~/.claude/skills (Claude Code and opencode) and ~/.codex/skills
+#   ./install.sh --opencode  also ~/.config/opencode/skills
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,10 +19,10 @@ for target in "${targets[@]}"; do
 		skill="${skill%/}"
 		link="$target/$(basename "$skill")"
 		if [[ -e "$link" && ! -L "$link" ]]; then
-			echo "omitido: $link existe y no es un enlace" >&2
+			echo "skipped: $link exists and is not a symlink" >&2
 			continue
 		fi
 		ln -sfn "$skill" "$link"
-		echo "enlazado: $link → $skill"
+		echo "linked: $link → $skill"
 	done
 done
