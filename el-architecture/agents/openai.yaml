@@ -1,0 +1,4 @@
+interface:
+  display_name: "EL · Arquitectura"
+  short_description: "Dueño único por regla, sin capas, protocolo claro"
+  default_prompt: "Usa $el-architecture para decidir dónde vive cada regla y construir este cambio como un vertical completo."

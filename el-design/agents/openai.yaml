@@ -1,0 +1,4 @@
+interface:
+  display_name: "EL · Diseño"
+  short_description: "Svelte 5 y Lumi: páginas, diálogos, estados y copy"
+  default_prompt: "Usa $el-design para construir esta pantalla con Lumi, con todos sus estados y sin reimplementar reglas del servidor."
