@@ -1,0 +1,2 @@
+# Validation only; using the skills does not require Python dependencies.
+PyYAML>=6.0,<7

@@ -1,6 +1,7 @@
 ---
 name: el-backend
 description: Implement and review reliable web backends, especially Rust with axum, sqlx, and PostgreSQL. Use for APIs, domain logic, authorization, schemas, migrations, transactions, concurrency, workers, and external integrations. Includes adaptations for existing SvelteKit/Kysely and Laravel/PHP applications.
+license: MIT
 ---
 
 # EL Backend
@@ -11,6 +12,7 @@ Use [EL Architecture](../el-architecture/SKILL.md) for the shared workflow and o
 | --- | --- |
 | Rust HTTP, types, async, SQLx | [Rust implementation](references/rust-axum-sqlx.md) |
 | Schema, isolation, concurrency, jobs | [PostgreSQL](references/postgres.md) |
+| New or changed authentication, sessions, CSRF, or secret storage | [Web security](references/web-security.md) |
 | Existing SvelteKit server | [SvelteKit and Kysely](references/sveltekit-kysely.md) |
 | Existing Laravel or PHP server | [Laravel and PHP](references/laravel-php.md) |
 
@@ -25,7 +27,7 @@ Read only the relevant references. Before a mutation, identify its **invariant, 
 - **B5. Tenant scope.** Resolve membership on the server. Scope queries, composite foreign keys, caches, jobs, and idempotency keys. With RLS, verify the actual runtime role, missing context, cross-tenant access, and pooled-connection reuse.
 - **B6. Business history.** Mutable entities have meaningful lifecycle states. Correct posted financial, inventory, and audit facts through traceable compensating records; do not silently rewrite them.
 - **B7. Derived state.** Derive balances and aggregate status from authoritative facts. A stored projection needs a demonstrated purpose, an update owner, and a reconciliation path.
-- **B8. Exact arithmetic.** Specify units, currency, scale, rounding mode and boundary, and overflow behavior. Use decimal or checked scaled-integer arithmetic and lossless wire values. Historical charged amounts may be facts, not values to recalculate from current prices.
+- **B8. Exact arithmetic.** Specify units, currency, scale, rounding mode and boundary, and overflow behavior. Use decimal or checked scaled-integer arithmetic and lossless wire values. When the domain defines totals as the sum of rounded lines, round each line once and sum those exact values; do not silently substitute header-level rounding. Historical charged amounts may be facts, not values to recalculate from current prices.
 - **B9. Compatible migrations.** Never edit an applied migration. Assess locks, volume, backfill, mixed application versions, and recovery. Regenerate schema-dependent artifacts together; readiness checks enforce supported compatibility rather than assuming exact schema equality.
 - **B10. Narrow triggers.** Triggers may protect storage invariants or atomic reservations. Cover every mutation path, including referenced-table changes. Do not hide authorization or external workflows in triggers.
 
@@ -46,8 +48,8 @@ Read only the relevant references. Before a mutation, identify its **invariant, 
 - **B20. Capabilities and scope.** Respect the existing permission catalog and implications. Avoid scattered role-name checks, privilege escalation, and unauthorized delegation.
 - **B21. Authoritative UI capabilities.** Derive `can_*` from the server policy. They describe presentation, not credentials or a guarantee that a later write will succeed.
 - **B22. Controlled disclosure.** Scope lookups before returning details. Follow a consistent not-found/forbidden policy so cross-tenant requests do not reveal protected resource existence.
-- **B23. Valid input types.** Bound sizes, ranges, nesting, and collection counts at ingress. Specify unknown-field behavior per contract. Parse once into valid values; database-dependent validity remains transactional.
-- **B24. Stable, safe errors.** Use one documented shape with machine-readable codes, field locations where relevant, and support correlation. Product requirements determine message language. Internal causes belong in redacted diagnostics.
+- **B23. Valid input types.** Bound sizes, ranges, nesting, and collection counts at ingress. Specify unknown-field behavior per contract. Deserialization and storage-to-domain conversion must use the validating constructor rather than bypass it. Database-dependent validity remains transactional.
+- **B24. Stable, safe errors.** Use one documented shape with a typed internal error catalog, exhaustive HTTP/presentation mappings, field locations where relevant, and support correlation. Independently versioned clients need a safe unknown-code fallback. Product requirements determine message language; internal causes belong in redacted diagnostics.
 - **B25. Structural error mapping.** Inspect SQLSTATE and known constraint names, never database message text. Unknown failures remain internal errors; do not expose schema or query details.
 - **B26. One wire contract.** Generate consumers or verify compatibility mechanically. Check nullability, enum evolution, limits, pagination, and public projections. Change definitions, generated consumers, and affected documentation together.
 - **B27. Lossless representation.** Encode instants with offsets, local dates as dates, exact amounts losslessly, and external identifiers as strings. Generated types alone do not prove runtime serialization matches them.
@@ -62,7 +64,7 @@ Read only the relevant references. Before a mutation, identify its **invariant, 
 
 ## Security and resources
 
-- **B33. Secret boundaries.** Use established secret storage and redaction; exclude secrets from serialization and debug output. Hash passwords and protect retrievable credentials appropriately. Do not claim memory erasure the runtime cannot guarantee.
+- **B33. Secret boundaries.** Exclude secrets from ordinary serialization and debug output. Hash passwords; protect retrievable credentials with an established vault or authenticated encryption and managed keys. Bind ciphertext to its tenant, record, and purpose when substitution is a threat. Do not claim memory erasure the runtime cannot guarantee.
 - **B34. Password verification.** Use maintained hashing implementations and current project security parameters, outside the async executor with memory-aware concurrency limits. Avoid account enumeration through responses and practical timing differences.
 - **B35. Session ownership.** Extend the existing authentication system. Protect cookies, expiration, rotation, and revocation. For opaque sessions, store token digests instead of bearer tokens; do not replace authentication during unrelated work.
 - **B36. Trust boundaries.** Parameterize SQL and allowlist dynamic identifiers. Cookie-authenticated mutations need CSRF protection; CORS alone is insufficient. Validate redirects, uploads, outbound destinations, and proxy-derived client information at their boundary.

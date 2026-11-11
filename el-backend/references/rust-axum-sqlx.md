@@ -5,7 +5,8 @@ Read for Rust backend work. Resolve versions and features from `rust-toolchain.t
 ## Boundaries and types
 
 - Keep pure domain calculations and policies independent of HTTP and database crates when the project already separates them. A small application does not automatically need more crates.
-- Use validated newtypes for values with real invariants and enums for exclusive states. Keep constructors private where validity depends on parsing; check overflow and explicit conversions at boundaries.
+- Use validated newtypes for values with real invariants and enums for exclusive states. Keep fields private, expose validating constructors, and check overflow and conversions. Private fields alone do not make derived deserialization validate input.
+- Route Serde input through `#[serde(try_from = "String")]` and a `TryFrom<String>` implementation that calls the parser, or an equivalent custom `Deserialize`. Do not derive unrestricted `Deserialize` for an invariant-bearing wrapper. Storage decoding and other conversions must preserve the same invariant; use infallible `From` only when validity is already guaranteed. Test invalid input through deserialization, not just the parser. [Serde conversion attributes](https://serde.rs/container-attrs.html)
 - Distinguish domain models, persisted facts, and public representations where their responsibilities differ. Do not add DTO conversions that merely rename identical data.
 - Accept dependencies at genuine I/O boundaries. A trait can earn its place through a current test, security, or substitution requirement; neither one implementation nor a mock automatically justifies it.
 - Prefer borrowed inputs and owned values at task boundaries. Do not scatter `clone`, `Arc<Mutex<_>>`, or allocations merely to satisfy the compiler; identify the required ownership and lifetime first.
@@ -32,6 +33,7 @@ Within the handler: enter context → stabilize facts → apply the policy → w
 - Return the intended public projection with `RETURNING` when possible. Check optional rows and affected counts according to the operation's semantics.
 - Do not force nullable columns to non-null merely to silence inference. An override needs a query-level invariant and a relevant test.
 - Preserve runtime wire semantics: decimal strings, timestamp offsets, optional versus null fields, enum encoding, and integer precision. Check generation drift with the repository's existing tooling.
+- Represent known internal error codes with an enum and map HTTP status through an exhaustive `match`; generate or verify the client's exhaustive presentation map. Adding a known code must expose missing mappings during checks. At an independently versioned wire boundary, decode unknown codes into a safe fallback instead of crashing or revealing raw provider diagnostics.
 
 An uncommitted SQLx transaction initiates rollback when dropped. This protects normal abandonment; it does not prove a disconnected client means a commit failed. Resolve ambiguous mutation outcomes through idempotency. [SQLx transactions](https://docs.rs/sqlx/latest/sqlx/struct.Transaction.html)
 

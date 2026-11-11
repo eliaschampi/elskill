@@ -1,13 +1,14 @@
 ---
 name: el-architecture
 description: Plan, implement, refactor, or review web software through explicit ownership, complete vertical slices, and verifiable constraints. Use for cross-layer changes, module boundaries, dependencies, contracts, migrations, or new applications. Pair with el-backend for server work and el-design for UI work; trivial local edits need no architecture ceremony.
+license: MIT
 ---
 
 # EL Architecture
 
 Build the smallest complete solution whose behavior can be demonstrated. Prioritize correctness, clarity, consistency, then measured performance. Economy removes unnecessary work, not safeguards.
 
-This skill owns the shared workflow: read it once when combining the EL skills. Project instructions and explicit user decisions govern local conventions. Model names, prices, and claimed capability do not change the quality bar.
+This skill owns the shared workflow: read it once when combining the EL skills. Project instructions and explicit user decisions govern local conventions. Preserve useful constraints when generalizing: replace a project-specific choice with its decision criteria and a safe starting point, not vague advice.
 
 ## Establish the execution contract
 
@@ -37,22 +38,22 @@ Trace the affected path: **entry → identity and authorization → domain decis
 | Responsibility | Owner | Boundary |
 | --- | --- | --- |
 | Referential integrity, uniqueness, row predicates | Database constraints | Friendly prechecks cannot replace concurrent enforcement |
-| Pure calculations and domain transitions | Domain functions and validated types | No HTTP, UI, or storage dependencies |
+| Pure calculations and domain transitions | Domain functions and validated types | No HTTP, UI, or storage dependencies; client-only tools can own local computation |
 | Authorization | Server policy using authoritative facts | UI capabilities describe access; mutations recheck it |
 | Input syntax and bounds | Trust-boundary parser | Storage-dependent facts remain transactional |
 | Use-case orchestration | Existing handler, action, or application service | Own atomicity and effects; avoid pass-through layers |
 | Wire representation | Existing schema or contract | Generate or verify consumers; expose only intended fields |
 | Derived data | Query, view, or reactive derivation | Persist projections only with a need and consistency strategy |
 | Tenancy, secrets, transactions, limits | Shared infrastructure boundary | Prevent bypass with types, privileges, or checks |
-| Presentation and interaction | Existing design system and UI | Keep domain decisions on the server |
+| Presentation and interaction | Existing design system and UI | Keep authorization and server-backed invariants authoritative on the server |
 
 - **A8. Organize by cohesive responsibility.** Extend the existing owner first. Split when independent responsibilities or change patterns justify it, not to satisfy an arbitrary file length.
-- **A9. Justify each abstraction.** What knowledge does it hide? If removed, where does complexity return? Do consumers share a reason to change? Alternate adapters support an interface; a current security, resource, or test boundary can also justify one. Implementation count alone is not a ban.
+- **A9. Justify each abstraction.** What knowledge does it hide? If removed, where does complexity return? Do consumers share a reason to change? Alternate adapters support an interface; a current security, resource, or test boundary can also justify one. A test double should isolate real nondeterminism or I/O, not manufacture a reason for a wrapper.
 - **A10. Prefer deep modules.** A small interface hides meaningful behavior, ordering, failure modes, and resource handling. Test through the interface callers use; keep implementation choices private.
 - **A11. Use the least machinery that meets the contract.** Existing owner → project primitive → standard platform → installed dependency → focused new implementation. Reject speculative layers, mirrored DTOs, option bags, empty features, and duplicate auth, state, UI, or HTTP systems.
 - **A12. Complete the cutover.** Update affected callers and remove replaced behavior together when feasible. Independently deployed clients or stored data may need a staged migration with an owner, exit condition, and removal check; an unsafe atomic rewrite is not simplicity.
 - **A13. One authoritative write path.** Required local effects share its transaction. Independent external effects need explicit delivery semantics and durable handoff; an in-process event is not durable delivery.
-- **A14. Turn guarantees into checks.** Choose the narrowest useful type, constraint, privilege, lint, contract check, or behavioral test. State what it proves and what can still bypass it.
+- **A14. Turn guarantees into checks.** Choose the narrowest useful type, constraint, privilege, lint, contract check, or behavioral test. Validate every construction and bypass path: a private constructor alone cannot protect a type whose deserializer skips it. State what the check proves and what it cannot.
 - **A15. Dependencies must earn their cost.** Check existing capabilities, compatibility, maintenance, security, runtime weight, and license. Enable only needed features. Follow project approval rules without asking again for already authorized routine choices.
 - **A16. Preserve the reason.** Document non-obvious invariants, tradeoffs, and constraints beside their owner. Avoid comments that narrate code or mandatory boilerplate on every module.
 - **A17. Keep the quality bar intact.** Do not remove assertions, skip checks, suppress diagnostics, weaken isolation, or lower budgets to pass. A legitimate rule change needs a stated reason and the applicable authorization.
@@ -74,11 +75,11 @@ On failure: **preserve evidence → reproduce → localize → test one hypothes
 
 - **A22. Record consequential decisions.** Capture context, choice, rejected alternative, reason, and conditions for revisiting in the existing decision owner. Do not label every choice irreversible.
 - **A23. Bound accepted risk.** State affected behavior, evidence, mitigation, and owner or follow-up condition. A limitation must not silently invalidate acceptance.
-- **A24. Measure the bottleneck.** Record workload, environment, metric, baseline, and command before claiming improvement. Derive budgets from product needs or measured baselines; distinguish estimates, laboratory results, and production evidence.
+- **A24. Measure the bottleneck.** Record workload, environment, metric, baseline, and command before claiming improvement. Derive product budgets from needs or measured baselines; authoritative security and accessibility requirements still apply without a baseline. Distinguish estimates, laboratory results, and production evidence.
 - **A25. Review behavior and structure.** Review without editing unless asked. Each actionable finding gives trigger, consequence, location, and relevant rule ID. Inspect the full diff for missed consumers, duplicate owners, obsolete paths, weakened checks, and scope growth. Separate confirmed defects from questions.
 
 ## Completion evidence
 
-Run repository-required checks and the focused proof from the execution contract. For a changed gate, demonstrate a rejected violation and an accepted control: generating a report does not enforce a rule. Material UI changes also need the rendered checks in `el-design`.
+Run repository-required checks and the focused proof from the execution contract. For a changed gate, demonstrate a rejected violation, an accepted control, and failure on checker errors: generating a report does not enforce a rule. Put fast checks near edits and expensive checks at the appropriate task or CI boundary. Material UI changes also need the rendered checks in `el-design`.
 
 Report delivered behavior, consequential decisions, checks actually run and their outcomes, and remaining limitations. Name the commit when requested. Do not claim readiness, compliance, speed, or completion beyond the evidence.

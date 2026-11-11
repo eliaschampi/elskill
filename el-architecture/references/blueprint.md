@@ -52,6 +52,8 @@ A separate domain crate can enforce dependency direction; a small application ma
 | Expensive work is bounded | Load test and resource measurements, including cancellation and shutdown |
 | UI works for its users | Rendered task completion and recovery on representative device conditions |
 
+Keep the mechanism concrete: private transaction constructors can restrict acquisition; an architecture lint can detect forbidden pool calls; an exhaustive enum match can reject an unmapped error code. Inspect actual visibility, generated code, and alternate entry points before claiming that a boundary cannot be bypassed.
+
 Use existing CI and command owners. A numerical target needs a reason, workload, measuring command, and enforcement location. Measure current latency, query count, memory, or shipped bytes before setting a regression budget; do not copy another application's numbers.
 
 ## Grow at demonstrated seams

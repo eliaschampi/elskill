@@ -49,6 +49,8 @@ Store eligible drafts only under the product's privacy rules, scoped to account,
 
 Use the established wrapper and actual open/close callbacks. Keying a form by draft identity can intentionally create a fresh instance; keying it by every reactive change destroys input and focus.
 
+Route close-button, Escape, backdrop, Cancel, and applicable back/navigation exits through one dismissal decision for dirty and submitting states. Preserve or confirm discarding unsaved changes as the product requires; any temporary closing restriction must release into a bounded recovery path.
+
 A modal needs an accessible name, focus inside on open, contained keyboard navigation, meaningful dismissal, and focus restoration. On touch devices, a focusable heading can avoid raising the keyboard while still moving focus into the modal. Preserve focus behavior through animation and unmounting. Restrict closing only for a justified, bounded critical operation, and expose a recovery state if it stalls.
 
 These requirements follow the [WAI-ARIA modal dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/); implement them through the existing accessible primitive rather than rebuilding modal mechanics.

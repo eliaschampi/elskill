@@ -1,27 +1,48 @@
 #!/usr/bin/env python3
-"""Check package integrity using the repository's single-line metadata format.
+"""Validate package metadata, portable links, references, and rule citations.
 
-This is a dependency-free integrity check, not a general YAML parser or a
-behavioral evaluation. Pass an alternate repository root to check a fixture.
+Install requirements-dev.txt to run. This checks structure, not agent behavior
+or preservation of unreferenced rules across revisions.
 """
 
-import json
 import re
 import sys
 from collections import Counter
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+try:
+    import yaml
+except ImportError:
+    raise SystemExit("Install development dependencies: python3 -m pip install -r requirements-dev.txt")
 
-def scalar(text, key, indent=0):
-    matches = re.findall(rf"^{' ' * indent}{re.escape(key)}: (.+)$", text, re.M)
-    if len(matches) != 1:
-        raise ValueError(f"expected one single-line {key}")
-    value = matches[0]
-    if value.startswith('"'):
-        value = json.loads(value)
-    elif value.startswith(("'", "|", ">", "[", "{")) or ": " in value or " #" in value:
-        raise ValueError(f"use a plain or JSON-quoted string for {key}")
+
+class UniqueSafeLoader(yaml.SafeLoader):
+    """Use YAML's safe types while rejecting ambiguous duplicate mapping keys."""
+
+    def construct_mapping(self, node, deep=False):
+        self.flatten_mapping(node)
+        keys = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            try:
+                if key in keys:
+                    raise ValueError(f"duplicate YAML key: {key}")
+                keys.add(key)
+            except TypeError as error:
+                raise ValueError("YAML mapping keys must be scalar") from error
+        return super().construct_mapping(node, deep=deep)
+
+
+def mapping(text):
+    value = yaml.load(text, Loader=UniqueSafeLoader)
+    if not isinstance(value, dict):
+        raise ValueError("expected a YAML mapping")
+    return value
+
+
+def text_field(data, key):
+    value = data.get(key)
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} must be a nonempty string")
     return value
@@ -32,11 +53,19 @@ def prose(text):
 
 
 def check(root):
+    root = root.resolve()
     errors = []
     skills = sorted(root.glob("el-*/SKILL.md"))
     if not skills:
         return ["no skill entrypoints found"]
-    documents = {p.resolve(): p.read_text(encoding="utf-8") for p in root.rglob("*.md") if ".git" not in p.parts}
+    documents = {}
+    for path in root.rglob("*.md"):
+        if ".git" in path.parts:
+            continue
+        if not path.resolve().is_relative_to(root):
+            errors.append(f"{path.relative_to(root)}: document resolves outside the package")
+            continue
+        documents[path.resolve()] = path.read_text(encoding="utf-8")
     graph = {p: set() for p in documents}
     definitions = Counter()
     mentions = set()
@@ -46,11 +75,18 @@ def check(root):
         mentions.update(re.findall(r"\b[ABD]\d+\b", body))
         for target in re.findall(r"\[[^\]\n]*\]\(([^)\n]+)\)", body):
             target = target.strip().strip("<>")
-            parsed = urlsplit(target)
+            try:
+                parsed = urlsplit(target)
+            except ValueError:
+                errors.append(f"{path.relative_to(root)}: invalid link {target}")
+                continue
             if parsed.scheme or parsed.netloc or not parsed.path:
                 continue
-            linked = (path.parent / unquote(parsed.path)).resolve()
-            if not linked.exists():
+            link_path = Path(unquote(parsed.path))
+            linked = (path.parent / link_path).resolve()
+            if link_path.is_absolute() or not linked.is_relative_to(root):
+                errors.append(f"{path.relative_to(root)}: nonportable link {target}")
+            elif not linked.exists():
                 errors.append(f"{path.relative_to(root)}: missing link {target}")
             elif linked in documents:
                 graph[path].add(linked)
@@ -61,25 +97,29 @@ def check(root):
         errors.append(f"{rule}: referenced without a definition")
     for skill in skills:
         try:
+            if skill.resolve() not in documents:
+                raise ValueError("skill entrypoint resolves outside the package")
             text = documents[skill.resolve()]
             frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|$)", text, re.S)
             if not frontmatter:
                 raise ValueError("missing YAML frontmatter")
-            name = scalar(frontmatter[1], "name")
-            description = scalar(frontmatter[1], "description")
+            fields = mapping(frontmatter[1])
+            name = text_field(fields, "name")
+            description = text_field(fields, "description")
             if name != skill.parent.name or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name) or len(name) > 64:
                 raise ValueError("name must match its directory and use lowercase hyphens")
             if len(description) > 1024:
                 raise ValueError("description exceeds 1024 characters")
-            metadata = (skill.parent / "agents/openai.yaml").read_text(encoding="utf-8")
-            if not re.search(r"^interface:\s*$", metadata, re.M):
-                raise ValueError("missing interface metadata")
-            scalar(metadata, "display_name", 2)
-            summary = scalar(metadata, "short_description", 2)
-            prompt = scalar(metadata, "default_prompt", 2)
+            metadata = mapping((skill.parent / "agents/openai.yaml").read_text(encoding="utf-8"))
+            interface = metadata.get("interface")
+            if not isinstance(interface, dict):
+                raise ValueError("interface must be a mapping")
+            text_field(interface, "display_name")
+            summary = text_field(interface, "short_description")
+            prompt = text_field(interface, "default_prompt")
             if not 25 <= len(summary) <= 64:
                 raise ValueError("short_description must contain 25–64 characters")
-            if f"${name}" not in prompt:
+            if not re.search(rf"\${re.escape(name)}(?![\w-])", prompt):
                 raise ValueError("default_prompt must invoke its skill")
             reached, pending = set(), [skill.resolve()]
             while pending:
@@ -90,7 +130,7 @@ def check(root):
             for reference in (skill.parent / "references").rglob("*.md"):
                 if reference.resolve() not in reached:
                     errors.append(f"{reference.relative_to(root)}: unreachable from its skill")
-        except (ValueError, OSError) as error:
+        except (ValueError, OSError, yaml.YAMLError) as error:
             errors.append(f"{skill.relative_to(root)}: {error}")
     return errors
 

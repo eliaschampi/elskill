@@ -56,3 +56,24 @@ Inspected its [entry skill](https://github.com/pbakaus/impeccable/blob/c1e0e5492
 - **Evidence over model reputation:** structural validation and behavioral scenarios distinguish package correctness from unmeasured model effectiveness.
 
 These are local design decisions inspired by the sources above, not claims that this skill outperforms them. Rust, PostgreSQL, and UI references link official technical documentation where behavior requires verification.
+
+## Conservation audit: original rules and public reuse
+
+The follow-up audit compared the original `eae24e2` with `3435f92`, including conditional references rather than only numbered rules. The original supplied valuable working mechanisms, not merely material to shorten. Its one-owner principle, database-enforced invariants, complete flows, exact arithmetic, and machine-checked contracts remain the foundation.
+
+| Finding in the first rewrite | Resolution and current owner |
+| --- | --- |
+| Private Rust fields were treated as enough to preserve validity | Restore parser-based deserialization and storage conversions in [Rust guidance](el-backend/references/rust-axum-sqlx.md) |
+| Stable error strings replaced mechanically complete mappings | Restore a closed internal catalog and exhaustive known-code mappings, with a safe fallback for newer wire codes, in backend contracts and design D29 |
+| New authentication and stored-secret protection became vague | Restore conditional password, session, cookie, expiry, CSRF, and vault/encryption defaults in [web security](el-backend/references/web-security.md) |
+| Form dismissal lost its single decision point | Restore consistent handling across applicable close paths while keeping bounded recovery in [Svelte dialogs](el-design/references/svelte-patterns.md) |
+| General UI guidance assumed every product had a server or an incumbent design system | Preserve local domain computation for offline tools and give new interfaces a concrete visual brief and representative-screen loop in [design](el-design/SKILL.md) |
+| Visual checks named contrast and zoom without a measurable target | Add a sourced WCAG baseline and focused rendered checks; do not claim full conformance from a partial scan |
+| The gate accepted malformed metadata and machine-local links | Parse YAML structurally and test positive and negative package fixtures |
+| Installer arguments and conflicting symlinks could change unintended paths | Validate before mutation, preserve conflicts, and test a caller-selected installation directory |
+
+Retained corrections include transactions per atomic operation, version-compatible migrations, true idempotency replay, real RLS privileges, and bounded blocking-task lifetimes. Restoring the old blanket rules would reintroduce defects. Project-specific paths, versions, locale, budgets, and mandatory Lumi/SPA choices remain conditional or removed.
+
+The upstream ideas now have concrete checks: Addy's quality gates must reject invalid inputs and checker errors; Ponytail's minimal change preserves every affected consumer; Pocock's module interfaces include construction and serialization paths; Impeccable's visual intent is paired with rendered accessibility evidence. The installed instructions remain independent of those repositories and of any model identity or price.
+
+The repository's MIT license covers its own material. Public packaging tests establish installation and metadata behavior; the model evaluation scenarios remain unexecuted specifications, not evidence of universal model quality.

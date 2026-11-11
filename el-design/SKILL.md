@@ -1,6 +1,7 @@
 ---
 name: el-design
 description: Design, implement, and review usable web interfaces, including pages, forms, dialogs, tables, responsive layouts, interaction states, accessibility, copy, and frontend performance. Preserve the existing design system; includes focused Svelte 5 and Lumi guidance when those technologies are present.
+license: MIT
 ---
 
 # EL Design
@@ -13,6 +14,8 @@ Inspect the target and its closest working neighbor. Identify the user, primary 
 
 Choose composition by the visitor's purpose: completing work favors scanability and consistency; reading favors structure and typography; choosing a product favors a clear proposition and credible evidence; exploring visual work lets the artifact lead. A dashboard and its marketing page need different density.
 
+For a genuinely new visual system, establish a compact brief: purpose, content hierarchy, type roles, semantic palette, spacing/density, and interaction states. Implement and inspect one representative screen before spreading those decisions. Keep durable choices in the existing design owner; no separate document is required.
+
 ## Foundation
 
 - **D1. Follow the framework's state model.** In Svelte 5 rune-mode components, use typed `$state` for mutable input, `$derived` for computed values, and `$effect` for external synchronization with cleanup. Do not migrate the framework as an unrelated side effect.
@@ -20,7 +23,7 @@ Choose composition by the visitor's purpose: completing work favors scanability 
 - **D3. Respect public styling boundaries.** Use supported variants and theme inputs; do not target private component selectors. Compose with supported primitives or add a reusable capability at its owner.
 - **D4. Make color meaningful.** Pair status color with text or shape, and use semantic foreground/background pairs. Brand color must not redefine success, danger, or other feedback meanings.
 - **D5. Keep one icon language.** Use the installed set, consistent stroke and sizing, and narrow supported imports. Hide decorative icons from assistive technology; controls still need names.
-- **D6. The server owns rules.** Render authoritative data and capabilities. Client validation gives early feedback from shared limits; it never grants permission or guarantees a later mutation will succeed.
+- **D6. Respect the authority boundary.** The server enforces authorization and server-backed invariants; UI capabilities and validation never grant permission or guarantee a later mutation. Pure computation, including offline or client-only behavior, belongs to its declared domain owner. Share rules and limits where client previews must match server results.
 - **D7. Reuse state owners.** Contract types, transport, notifications, navigation, formatting, brand, and session each have an existing home. Locale, currency, and time zone come from product context.
 - **D8. Ship working affordances.** Every visible action performs its promised task. Do not add decorative controls, fabricated metrics, invented testimonials, or empty future routes.
 
@@ -49,7 +52,7 @@ Choose composition by the visitor's purpose: completing work favors scanability 
 - **D26. Match controls to their promise.** A checkbox typically contributes to a submitted form; a switch commonly changes an immediate setting. Persistent problems need persistent feedback; transient success can use notifications.
 - **D27. Load data at its owner.** Use route loaders, actions, or the existing query layer. Key requests by route, tenant, filters, and identity; cancel or discard stale responses so old results cannot overwrite a newer view.
 - **D28. Reuse the transport boundary.** Keep resource calls on the existing client or framework actions. Preserve cancellation, typed errors, authentication, and request context instead of scattering raw requests across components.
-- **D29. Recover explicitly.** Handle reauthentication with a safe internal return path, denied access, field errors, rate limits, conflicts, and network failure. Distinguish a failed mutation from an unknown outcome.
+- **D29. Recover explicitly.** Handle reauthentication with a safe internal return path, denied access, field errors, rate limits, conflicts, and network failure. Distinguish a failed mutation from an unknown outcome. For a closed generated error-code union, make missing presentation handlers fail static checks; retain a safe runtime fallback for unknown wire codes across deployments.
 - **D30. Choose rendering per surface.** Preserve the application strategy. SSR or prerendering can serve public discovery and reading; SPA behavior can suit interactive work. One browser-dependent component does not justify disabling SSR globally.
 
 ## Visual craft
@@ -80,5 +83,7 @@ Choose composition by the visitor's purpose: completing work favors scanability 
 ## Verify the rendered result
 
 Run applicable project checks. For a material UI change, open the affected route and exercise its primary action and important recovery path. Inspect narrow and wide layouts, supported themes, keyboard navigation, zoom, long content, and console/network errors. Batch related visual checks, fix observed problems, and inspect again.
+
+Use [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/) as the default web accessibility baseline unless the project requires stricter criteria. Check rendered text contrast (4.5:1 normally; 3:1 for qualifying large text), relevant non-text UI contrast (3:1), text resizing to 200%, and reflow at 320 CSS pixels for vertically scrolling content, applying the standard's exceptions. Verify visible, unobscured keyboard focus and pointer targets of at least 24 by 24 CSS pixels or an applicable spacing/equivalent-control exception. These are focused checks, not proof of full conformance.
 
 Use existing accessibility and visual-regression tools, but do not equate a clean scan with full accessibility. If the application cannot run, report the exact limitation and what was inspected; never claim a screenshot or interaction check that did not happen.
