@@ -49,7 +49,7 @@ python3 -m unittest discover -s tests
 bash -n install.sh
 ```
 
-Use Python 3.10 or newer and a virtual environment for development dependencies. PyYAML parses metadata; it is not needed by agents consuming the skills. Regression tests exercise rejected metadata, portable links, and safe installation in temporary directories. CI runs the same checks.
+Use Python 3.10 or newer and a virtual environment for development dependencies. PyYAML parses metadata; it is not needed by agents consuming the skills. Regression tests exercise rejected metadata, portable links, contiguous rule sequences that match the ranges stated above, and safe installation in temporary directories. CI runs the same checks on the oldest supported and a current Python.
 
 These checks validate the package, not a model's engineering judgment. The [behavioral scenarios](evals/scenarios.md) are evaluation specifications, not an automated benchmark. Compare baseline and skill-assisted runs on the same task and artifacts before claiming a quality gain; no model benchmark is claimed here.
 

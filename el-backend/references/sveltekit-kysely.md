@@ -17,7 +17,7 @@ A route coordinates HTTP, authentication, parsing, and the framework response. A
 
 Use the existing migration and database-type generation commands; never edit generated types. Follow the [PostgreSQL reference](postgres.md) for concurrency, RLS, and migrations. Bulk related writes, scope by tenant and operational location, and paginate growing results.
 
-Prefer the established form-action and progressive-enhancement path. Return field/form errors through the project's `fail` convention and preserve redirect/error control flow; a broad catch must not swallow framework redirects. Invalidate the data owner whose result changed using established dependency keys. Do not create a second HTTP client or local cache to imitate a separate API architecture.
+Prefer the established form-action and progressive-enhancement path. Return field/form errors through the project's `fail` convention and preserve redirect/error control flow; a broad catch must not swallow framework redirects. Invalidate the data owner whose result changed using established dependency keys. Do not create a second HTTP client or local cache to imitate a separate API architecture. SvelteKit remote functions are experimental; use them only where the project has already opted in.
 
 Request-scoped user data must not live in shared server module state. Test two users or tenants in the same process and stale client responses during navigation when these paths change.
 

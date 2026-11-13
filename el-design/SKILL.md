@@ -6,7 +6,7 @@ license: MIT
 
 # EL Design
 
-This skill owns interaction and presentation. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer or structural work. Read [Lumi](references/lumi.md) when Lumi is installed, [Svelte patterns](references/svelte-patterns.md) for Svelte work, and [visual craft](references/visual-craft.md) when creating, redesigning, or polishing a visual language. Verify unfamiliar component APIs against the installed package.
+This skill owns interaction and presentation. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer or structural work. Read [Lumi](references/lumi.md) when Lumi is installed, [Svelte patterns](references/svelte-patterns.md) for Svelte work, [visual craft](references/visual-craft.md) when creating, redesigning, or polishing a visual language, and [web platform](references/web-platform.md) when implementing it (tokens, platform features, motion, fonts, images). Verify unfamiliar component APIs against the installed package.
 
 Apply the rule groups the change touches, not all of them:
 
@@ -17,15 +17,15 @@ Apply the rule groups the change touches, not all of them:
 | Page, list, table, navigation | D1–D18, D27–D30, D39–D42 |
 | Form, dialog, mutation | D1–D8, D19–D29, D39–D42 |
 | Dependency, heavy asset, slow screen | D47–D49 |
-| New visual language or redesign | Establish direction, D31–D38, visual craft |
+| New visual language or redesign | Establish direction, D31–D38, visual craft, web platform |
 
-Before writing JavaScript or adding a dependency for an overlay, positioning, transition, validation, or scroll effect, check whether the platform already provides it within the project's browser support: use the `modern-web-guidance` skill when installed, otherwise MDN and Baseline status.
+Before writing JavaScript or adding a dependency for an overlay, positioning, transition, validation, or scroll effect, check whether the platform already provides it within the project's browser support: use the `modern-web-guidance` skill when installed, otherwise MDN and Baseline status; [web platform](references/web-platform.md) lists current candidates by tier.
 
 ## Establish direction
 
 Inspect the target and its closest working neighbor. Identify the user, primary task, real content, device, network conditions, and constraints. Decide whether the request preserves, extends, or replaces the existing visual language; a missing design document does not make an application a blank canvas.
 
-Choose composition by the visitor's purpose: completing work favors scanability and consistency; reading favors structure and typography; choosing a product favors a clear proposition and credible evidence; exploring visual work lets the artifact lead. A dashboard and its marketing page need different density.
+Choose composition by the visitor's purpose, taken from the surface rather than the product: completing work (Operate) favors scanability, consistency, and earned familiarity; reading favors structure and typography; choosing a product (Persuade) favors a clear proposition, a working action, and credible evidence; exploring visual work lets the artifact lead. A dashboard and its marketing page are different modes with different density; visual craft says how ambition scales by mode.
 
 For a genuinely new visual system, establish a compact brief: purpose, content hierarchy, type roles, semantic palette, spacing/density, and interaction states. Implement and inspect one representative screen before spreading those decisions. Keep durable choices in the existing design owner; no separate document is required.
 
@@ -98,5 +98,7 @@ For a genuinely new visual system, establish a compact brief: purpose, content h
 Run applicable project checks. For a material UI change, open the affected route and exercise its primary action and important recovery path. Inspect narrow and wide layouts, supported themes, keyboard navigation, zoom, long content, and console/network errors. Batch related visual checks, fix observed problems, and inspect again.
 
 Use [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/) as the default web accessibility baseline unless the project requires stricter criteria. Check rendered text contrast (4.5:1 normally; 3:1 for qualifying large text), relevant non-text UI contrast (3:1), text resizing to 200%, and reflow at 320 CSS pixels for vertically scrolling content, applying the standard's exceptions. Verify visible, unobscured keyboard focus and pointer targets of at least 24 by 24 CSS pixels or an applicable spacing/equivalent-control exception. These are focused checks, not proof of full conformance.
+
+When polishing, classify each drift before fixing it: a missing token, a one-off that a shared component should replace, a conceptual mismatch with comparable flows, or a local defect; fix at the narrowest correct level. Triage in this order: broken or blocked tasks, misleading state, and inaccessible paths; then missing loading, empty, error, and disabled states; then flow, hierarchy, and system drift; then visual and motion inconsistency; then code and asset cleanup. Do not perfect one corner while the rest sits below the same bar, and finish with a diff review for accidental churn, orphaned code, and duplicated values.
 
 Use existing accessibility and visual-regression tools, but do not equate a clean scan with full accessibility. If the application cannot run, report the exact limitation and what was inspected; never claim a screenshot or interaction check that did not happen.

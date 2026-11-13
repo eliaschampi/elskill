@@ -52,6 +52,31 @@ def prose(text):
     return re.sub(r"(?ms)^```[^\n]*\n.*?^```[ \t]*$", "", text)
 
 
+def rule_sequence_errors(definitions, readme):
+    """Each rule group must run 1..N without gaps, and the README must state that range.
+
+    Counting definitions alone cannot see a rule deleted from the middle of a
+    sequence, and a deleted last rule is only noticed if something else cites it.
+    """
+    errors = []
+    numbers = {}
+    for rule in definitions:
+        numbers.setdefault(rule[0], set()).add(int(rule[1:]))
+    for group, found in sorted(numbers.items()):
+        missing = sorted(set(range(1, max(found) + 1)) - found)
+        if missing:
+            errors.append(f"{group}: missing rule IDs {', '.join(f'{group}{n}' for n in missing)}")
+    if readme is None:
+        return errors
+    claimed = {group: int(last) for group, last in re.findall(r"`([ABD])1`\s*[–-]\s*`\1(\d+)`", readme)}
+    for group, found in sorted(numbers.items()):
+        if claimed.get(group) != max(found):
+            errors.append(f"README.md: {group} range must be stated as `{group}1`–`{group}{max(found)}`")
+    for group in sorted(claimed.keys() - numbers.keys()):
+        errors.append(f"README.md: {group} range is stated but no {group} rule is defined")
+    return errors
+
+
 def check(root):
     root = root.resolve()
     errors = []
@@ -95,6 +120,7 @@ def check(root):
             errors.append(f"{rule}: defined {count} times")
     for rule in sorted(mentions - definitions.keys()):
         errors.append(f"{rule}: referenced without a definition")
+    errors.extend(rule_sequence_errors(definitions, documents.get((root / "README.md").resolve())))
     for skill in skills:
         try:
             if skill.resolve() not in documents:

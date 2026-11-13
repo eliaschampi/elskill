@@ -18,6 +18,15 @@ Use `$props` for typed component inputs and the project's supported snippets/eve
 
 Reserve `$effect` for synchronization outside the reactive graph. Do not use it to maintain a second copy of computable state. Dispose subscriptions, listeners, timers, and obsolete requests; ensure browser-only APIs do not execute during SSR.
 
+## Modern Svelte 5 surface
+
+Check the installed version and configuration first; use only what the project already provides.
+
+- `{@attach fn}` (Svelte 5.29 and newer) is the reactive replacement for actions in new code: it runs in an effect, re-runs when state it reads changes, may return cleanup, and passes through components by prop spreading. `fromAction` adapts existing `use:` actions; type factories with `Attachment` from `svelte/attachments`.
+- `<svelte:boundary>` with `pending` and `failed` snippets contains async and error states at a useful granularity, not around every component.
+- `$state.raw` for large or immutable data that is replaced rather than mutated; `$derived.by` for multi-statement derivations; `$bindable` only for deliberate two-way props.
+- Experimental and opt-in: `await` in components and `$derived` requires `compilerOptions.experimental.async` (5.36 and newer; the flag is removed in Svelte 6, and details may change in minor releases), and SvelteKit remote functions (`query`, `form`, `command`, `prerender`; from 2.27). Use either only where the project has enabled it; otherwise stay on loaders and actions.
+
 ## Loading and navigation
 
 - Load page data through its route/query owner; use framework-provided fetch/context where required for server rendering and authentication.

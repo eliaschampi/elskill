@@ -15,6 +15,16 @@ Read for schema, SQL, tenancy, migrations, or durable jobs. Preserve the project
 
 Put the rule and its concurrency rationale beside the schema owner. Map expected SQLSTATE and constraint names, never error text. A database invariant and client feedback can coexist without making feedback authoritative.
 
+## Modern features (verify version)
+
+Available from PostgreSQL 18. Confirm `SHOW server_version` and the managed provider's support, and do not assume features of later majors:
+
+- `uuidv7()`: time-ordered UUIDs with better index locality than random v4 keys. Identity stays opaque (B2).
+- `RETURNING OLD` and `NEW` on `INSERT`, `UPDATE`, `DELETE`, and `MERGE`: audit rows and optimistic checks without a second read.
+- `WITHOUT OVERLAPS` and `PERIOD` temporal constraints: non-overlapping validity ranges enforced in the database instead of by application locks.
+- Virtual generated columns (now the default kind): derived values computed at read time (B7); store them when they must be indexed.
+- B-tree skip scan can remove the need for an extra index when the leading column has few distinct values; confirm with `EXPLAIN`.
+
 ## Tenant isolation
 
 For RLS-based products, use tenant predicates and appropriate composite foreign keys alongside policies. Configure `USING` for visible rows and `WITH CHECK` for new row values. Enable RLS and use `FORCE ROW LEVEL SECURITY` when the owner must be subject to it.

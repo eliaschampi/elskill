@@ -92,6 +92,30 @@ class PackageTests(unittest.TestCase):
                 self.entry.write_text(text)
                 self.assertTrue(checker.check(self.root))
 
+    def errors_mentioning(self, rule):
+        return [error for error in checker.check(self.root) if rule in error]
+
+    def test_rule_sequence_must_have_no_gaps(self):
+        # A rule deleted from the middle is cited nowhere else, so only a
+        # contiguity check can notice it.
+        self.entry.write_text(ENTRY + "\n- **A3.** Third.\n")
+        self.assertTrue(self.errors_mentioning("A2"))
+        self.entry.write_text(ENTRY + "\n- **A2.** Second.\n- **A3.** Third.\n")
+        self.assertEqual(checker.check(self.root), [])
+
+    def test_readme_range_must_match_defined_rules(self):
+        readme = self.root / "README.md"
+        readme.write_text("Rule IDs (`A1`–`A1`) exist.\n")
+        self.assertEqual(checker.check(self.root), [])
+        for text, rule in (
+            ("Rule IDs (`A1`–`A2`) exist.\n", "A"),  # claims a rule that is not defined
+            ("No range is documented.\n", "A"),  # defined prefix is undocumented
+            ("Rule IDs (`A1`–`A1`) and (`B1`–`B4`).\n", "B"),  # claims an undefined group
+        ):
+            with self.subTest(text=text):
+                readme.write_text(text)
+                self.assertTrue(self.errors_mentioning(rule))
+
 
 class InstallerTests(unittest.TestCase):
     def setUp(self):

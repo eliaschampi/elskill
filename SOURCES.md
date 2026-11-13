@@ -101,3 +101,25 @@ A review of `8245a6f` judged the rules sound and found three gaps: the entry poi
 | No benchmark is claimed; the first three comparisons and their measurements are named | [Scenarios](evals/scenarios.md) |
 
 Not adopted: mandatory brainstorming, plan documents, or subagents for ordinary work; session modes; a bundled guide library; aesthetic bans. Each adds ceremony or weight to the routine case this revision makes cheaper.
+
+## Direction and platform revision
+
+Reviewed on 2026-11-12. The observed failures: deleting a rule from the middle of a sequence passed the package check; the visual guidance told an agent without a brief to "default to quiet structure", which is itself the converged generic look, and said little about building on the current web platform; two framework references lagged their stable surface.
+
+Source: [Impeccable at b4bff16](https://github.com/pbakaus/impeccable/tree/b4bff1626c344067788c2679f048a20057c7cc5a) (v4.8.2, [Apache-2.0 license](https://github.com/pbakaus/impeccable/blob/b4bff1626c344067788c2679f048a20057c7cc5a/LICENSE)). Inspected its [entry skill](https://github.com/pbakaus/impeccable/blob/b4bff1626c344067788c2679f048a20057c7cc5a/plugin/skills/impeccable/SKILL.md), craft floor, new-work, operate, and the type, color, layout, animate, distill, quieter, bolder, polish, and optimize references, and the registry of its deterministic detector. This guidance is rewritten, not copied.
+
+**Adopt:** surface mode (Persuade, Operate, Read, Experience) taken from the surface rather than the product, scaling how much of the world the design may carry; deriving the visual world from the audience's own graphic traditions and naming one signature move; the self-test that the aesthetic must not be guessable from the category; the color-strategy ladder and choosing light or dark from the scene of use; theming browser-drawn surfaces from the palette; a short list of reflex defaults to question; subtract-first and measured performance; a polish triage order.
+
+**Adapt:** the mode table classifies a surface and scales ambition; it is not a session mode that changes the agent's workflow, which remains not adopted. The defaults list names what to question, not what to forbid: a brief can earn any item, and rule D31 stays its owner, so the earlier decision against aesthetic bans holds. The typeface list is the converged set the upstream detector and playbook flag, kept as a prompt to justify a choice, not as a ranking. A `DESIGN.md` is a reasonable design owner only when the project has none.
+
+**Not adopted:** the command framework, detector and hook, live variants, comp generation, `PRODUCT.md` setup, native-platform references, dice-rolled direction rounds, and any mandatory document set.
+
+**Owner:** [visual craft](el-design/references/visual-craft.md) for decisions and [web platform](el-design/references/web-platform.md) for implementation; the entry [design skill](el-design/SKILL.md) owns routing and polish triage.
+
+Platform status in web platform was checked on 2026-11-12 against [Baseline 2025](https://web.dev/baseline/2025), [Baseline 2026](https://web.dev/baseline/2026), and the [modern-css.com tracker](https://modern-css.com/whats-new/baseline/). Statuses move; the file says to recheck before relying on one. Currency additions cite the [PostgreSQL 18 press kit](https://www.postgresql.org/about/press/presskit18) and the Svelte documentation for [await expressions](https://svelte.dev/docs/svelte/await-expressions) and [`{@attach}`](https://svelte.dev/docs/svelte/@attach).
+
+| Decision | Owner |
+| --- | --- |
+| Rule groups must run without gaps, and the README must state each range; the failure was a deleted `B30` that passed | [Package check](scripts/check.py) with regression tests |
+| Pin workflow actions to commit SHAs and test the stated Python floor and a current release; confirmed only by the first run of CI | [CI workflow](.github/workflows/check.yml) |
+| Three new scenarios cover mode choice, the Operate surface, and a measured lightening; they are unexecuted specifications | [Scenarios](evals/scenarios.md) |
