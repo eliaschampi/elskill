@@ -123,3 +123,29 @@ Platform status in web platform was checked on 2026-11-12 against [Baseline 2025
 | Rule groups must run without gaps, and the README must state each range; the failure was a deleted `B30` that passed | [Package check](scripts/check.py) with regression tests |
 | Pin workflow actions to commit SHAs and test the stated Python floor and a current release; confirmed only by the first run of CI | [CI workflow](.github/workflows/check.yml) |
 | Three new scenarios cover mode choice, the Operate surface, and a measured lightening; they are unexecuted specifications | [Scenarios](evals/scenarios.md) |
+
+## RenUI rename revision
+
+Reviewed on 2026-11-13. The observed failure: the design skill still routed to Lumi UI (`@lumi-ui/svelte`, `--lumi-*`, `lumi-*` classes) after the library was renamed and its 2.0 release removed legacy glass and gradient tokens. An agent following the old reference would have inspected a package name that no longer exists and composed with class and token prefixes that no longer resolve.
+
+Source: [`@renui/svelte` 2.0.1 on npm](https://www.npmjs.com/package/@renui/svelte) (MIT; export map, `dist` declarations, and stylesheets inspected from the published tarball) and the [RenUI repository](https://github.com/eliaschampi/renui) (`AGENTS.md`, `docs/CONSUMER_REFERENCE.md`, `docs/GUIDE.md`, `docs/UPGRADE.md`). The guidance is rewritten, not copied.
+
+**Adopt:** the `ren` prefix for package, tokens, classes, layers, and TypeScript names; the opt-in `patterns.css`; context-based `setRenLocale`; the brand and status seed contract; one color-scheme controller with a shared options object; the 1.x to 2.0 migration summary and codemod pointer; the Baseline 2024 browser floor.
+
+**Adapt:** the reference stays an inspection guide, not a frozen API. Where the library's consumer reference and its published `dist` disagree (the reference says `@renui/svelte/styles` includes patterns; `dist/styles/index.css` does not), the reference tells the agent to trust `dist`.
+
+**Not adopted:** a copied component catalog or prop tables, which would drift again; the library's contributor rules, which apply only inside the library.
+
+**Owner:** [RenUI reference](el-design/references/renui.md); the [design skill](el-design/SKILL.md) owns routing.
+
+## SvelteKit 3 currency audit
+
+Reviewed on 2026-11-13, in the same pass. RenUI 2.0.1 requires Svelte 5.56.4 or newer, the line SvelteKit 3 builds on, so products using it are likely on SvelteKit 3, whose release removes or renames APIs the Svelte references still presented as current (`$lib`, `$app/stores`, `svelte.config.js`, `csrf.checkOrigin`, `$app/paths` `base`).
+
+Source: the [SvelteKit 3 migration guide](https://github.com/sveltejs/kit/blob/main/documentation/docs/60-appendix/35-migrating-to-sveltekit-3.md) and the [`@sveltejs/kit` changelog](https://github.com/sveltejs/kit/blob/main/packages/kit/CHANGELOG.md), read at `@sveltejs/kit` 3.2.0. The guidance is rewritten, not copied.
+
+**Adopt:** the version floor, config location, `#lib`, `$app/*` moves, navigation and form changes in [Svelte patterns](el-design/references/svelte-patterns.md); CSRF, `handleError`, cookies, server-only naming, redirects, and adapters in [SvelteKit and Kysely](el-backend/references/sveltekit-kysely.md). Each section is gated on the installed major, so a 2.x project keeps 2.x guidance.
+
+**Adapt:** the lists name only changes an agent trained on 2.x would get wrong, not the whole migration guide; `npx sv migrate sveltekit-3` and the guide remain the owner of the rest.
+
+**Checked, unchanged:** `await` in components still needs `compilerOptions.experimental.async` until Svelte 6; remote functions are still experimental; `{@attach}` landed in Svelte 5.29; PostgreSQL 19 was at release candidate 2 on 2026-11-12, so the PostgreSQL references' note not to assume features of later majors holds.

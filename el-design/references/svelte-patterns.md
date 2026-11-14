@@ -25,7 +25,18 @@ Check the installed version and configuration first; use only what the project a
 - `{@attach fn}` (Svelte 5.29 and newer) is the reactive replacement for actions in new code: it runs in an effect, re-runs when state it reads changes, may return cleanup, and passes through components by prop spreading. `fromAction` adapts existing `use:` actions; type factories with `Attachment` from `svelte/attachments`.
 - `<svelte:boundary>` with `pending` and `failed` snippets contains async and error states at a useful granularity, not around every component.
 - `$state.raw` for large or immutable data that is replaced rather than mutated; `$derived.by` for multi-statement derivations; `$bindable` only for deliberate two-way props.
-- Experimental and opt-in: `await` in components and `$derived` requires `compilerOptions.experimental.async` (5.36 and newer; the flag is removed in Svelte 6, and details may change in minor releases), and SvelteKit remote functions (`query`, `form`, `command`, `prerender`; from 2.27). Use either only where the project has enabled it; otherwise stay on loaders and actions.
+- Experimental and opt-in: `await` in components and `$derived` requires `compilerOptions.experimental.async` (5.36 and newer; the flag is removed in Svelte 6, and details may change in minor releases), and SvelteKit remote functions (`query`, `form`, `command`, `prerender`; from 2.27; `experimental.remoteFunctions` plus `compilerOptions.experimental.async`). Use either only where the project has enabled it; otherwise stay on loaders and actions.
+
+## SvelteKit 3
+
+Check the `@sveltejs/kit` major first; on 2.x keep the 2.x APIs. The points below follow the official 3.x migration guide and replace what older knowledge suggests. `npx sv migrate sveltekit-3` automates much of the move; upgrade to the latest 2.x first for targeted deprecation warnings. Server-side changes (CSRF, cookies, `handleError`) are in the [SvelteKit and Kysely reference](../../el-backend/references/sveltekit-kysely.md).
+
+- Floor: Node 22.17, TypeScript 6, Svelte 5.57.1, Vite 8.0.12, `@sveltejs/vite-plugin-svelte` 7.
+- `svelte.config.js` is no longer read: pass project config to the `sveltekit({...})` plugin in `vite.config.js` (`kit.*` options become top level, beside `compilerOptions`).
+- `$lib` is gone: declare `#lib` and `#lib/*` in `package.json` `imports` and import with explicit extensions (`#lib/foo.js`). Param matchers live in one `src/params.ts` built with `defineParams`.
+- `$app/stores` is removed: use `$app/state` and read `page` without `$`. `$app/environment` is now `$app/env`; `$env/*` is deprecated for `$app/env/private` and `$app/env/public`; `base`, `assets`, and `resolveRoute` left `$app/paths` for `resolve(...)` and `asset(...)`, whose paths have no leading slash.
+- Navigation: `refreshAll` replaces `invalidateAll`; `pushState` and `replaceState` give way to `goto(url, { shallow: true, state })`; `goto` rejects for URLs that match no route; a link to the current URL runs `refreshAll()`; `page.url` is read-only; `data-sveltekit-*` uses `false`, not `'off'`.
+- Enhanced forms (`use:enhance`) see the status passed to `fail` instead of 200, and navigate when `action` targets another page. Remote-function forms need `{...form.fields.x.as('text')}`, not a hand-written `name`.
 
 ## Loading and navigation
 

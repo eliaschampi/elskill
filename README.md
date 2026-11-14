@@ -10,7 +10,7 @@ The governing principle is **one owner per rule, the smallest complete behavior,
 | [el-backend](el-backend/SKILL.md) | Rust HTTP, SQL, authorization, migrations, workers | Integrity, atomicity, concurrency, contracts, bounded resources |
 | [el-design](el-design/SKILL.md) | Screens, forms, interactions, responsive UI | Task clarity, state transitions, visual craft, accessibility, rendered verification |
 
-A local change needs only its domain skill; load architecture for cross-layer, structural, or critical work. Each skill names the rule groups a change touches and routes to focused references only when needed. Existing frameworks and design systems remain authoritative; Rust/axum/sqlx/PostgreSQL and Svelte/Lumi have dedicated guidance, not universal mandates.
+A local change needs only its domain skill; load architecture for cross-layer, structural, or critical work. Each skill names the rule groups a change touches and routes to focused references only when needed. Existing frameworks and design systems remain authoritative; Rust/axum/sqlx/PostgreSQL and Svelte/RenUI have dedicated guidance, not universal mandates.
 
 ## Install
 

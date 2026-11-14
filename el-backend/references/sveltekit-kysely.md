@@ -21,6 +21,18 @@ Prefer the established form-action and progressive-enhancement path. Return fiel
 
 Request-scoped user data must not live in shared server module state. Test two users or tenants in the same process and stale client responses during navigation when these paths change.
 
+## SvelteKit 3
+
+On `@sveltejs/kit` 3.x (version floor, config location, and `#lib` are in the [Svelte patterns](../../el-design/references/svelte-patterns.md); on 2.x keep the 2.x behavior):
+
+- CSRF is always on: `csrf.checkOrigin` is removed, so allow cross-origin hosts with `csrf.trustedOrigins` and set `paths.origin` behind a reverse proxy. Cross-origin mutative requests without a `Content-Type` are rejected.
+- `handleError` receives every error, including expected `error()` ones, may return `status`, and gets remote-function validation errors as `kind: 'validation'` (`handleValidationError` is gone). `error(status, message, extra)` takes a string message; extra `App.Error` fields go third.
+- Cookies: `path` defaults to `'/'` instead of the request path; names must be ASCII.
+- Server-only means any `server` filename segment or directory outside `src/routes` and `static`, not only `src/lib/server`.
+- `redirect()` to an external URL needs `{ external: true }` or an origin list; a 204 response has no body; `json()` and `text()` are deprecated for `Response.json()` and `new Response()`.
+- Remote functions stay experimental. Inside a `query`, `event.url`, `event.params`, and `event.route` throw: pass values as arguments.
+- First-party adapters require Kit 3: Vercel drops the edge runtime, and Cloudflare APIs come from `cloudflare:workers`, not `platform`.
+
 ## Verification
 
 Read package scripts and CI to select type, lint, build, generation, and integration checks. Use a confirmed disposable database with production-equivalent grants; the application's `DATABASE_URL` is not a test target by default. Test direct unauthorized action calls, malformed input, rollback, and the resulting page state through public interfaces.

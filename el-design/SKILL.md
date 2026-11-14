@@ -1,12 +1,12 @@
 ---
 name: el-design
-description: Design, implement, and review usable web interfaces, including pages, forms, dialogs, tables, responsive layouts, interaction states, accessibility, copy, and frontend performance. Preserve the existing design system; includes focused Svelte 5 and Lumi guidance when those technologies are present.
+description: Design, implement, and review usable web interfaces, including pages, forms, dialogs, tables, responsive layouts, interaction states, accessibility, copy, and frontend performance. Preserve the existing design system; includes focused Svelte 5 and RenUI guidance when those technologies are present.
 license: MIT
 ---
 
 # EL Design
 
-This skill owns interaction and presentation. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer or structural work. Read [Lumi](references/lumi.md) when Lumi is installed, [Svelte patterns](references/svelte-patterns.md) for Svelte work, [visual craft](references/visual-craft.md) when creating, redesigning, or polishing a visual language, and [web platform](references/web-platform.md) when implementing it (tokens, platform features, motion, fonts, images). Verify unfamiliar component APIs against the installed package.
+This skill owns interaction and presentation. A local change needs only this file; read [EL Architecture](../el-architecture/SKILL.md) for its risk classes and for cross-layer or structural work. Read [RenUI](references/renui.md) when RenUI (`@renui/svelte`) or its predecessor Lumi UI (`@lumi-ui/svelte`) is installed, [Svelte patterns](references/svelte-patterns.md) for Svelte work, [visual craft](references/visual-craft.md) when creating, redesigning, or polishing a visual language, and [web platform](references/web-platform.md) when implementing it (tokens, platform features, motion, fonts, images). Verify unfamiliar component APIs against the installed package.
 
 Apply the rule groups the change touches, not all of them:
 
@@ -32,7 +32,7 @@ For a genuinely new visual system, establish a compact brief: purpose, content h
 ## Foundation
 
 - **D1. Follow the framework's state model.** In Svelte 5 rune-mode components, use typed `$state` for mutable input, `$derived` for computed values, and `$effect` for external synchronization with cleanup. Do not migrate the framework as an unrelated side effect.
-- **D2. Extend the design system.** Prefer its public components, utilities, and semantic tokens. Use Lumi in Lumi products; preserve the adopted system elsewhere. Do not introduce a competing kit for one screen.
+- **D2. Extend the design system.** Prefer its public components, utilities, and semantic tokens. Use RenUI in RenUI products; preserve the adopted system elsewhere. Do not introduce a competing kit for one screen.
 - **D3. Respect public styling boundaries.** Use supported variants and theme inputs; do not target private component selectors. Compose with supported primitives or add a reusable capability at its owner.
 - **D4. Make color meaningful.** Pair status color with text or shape, and use semantic foreground/background pairs. Brand color must not redefine success, danger, or other feedback meanings.
 - **D5. Keep one icon language.** Use the installed set, consistent stroke and sizing, and narrow supported imports. Hide decorative icons from assistive technology; controls still need names.
