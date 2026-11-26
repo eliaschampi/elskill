@@ -1,0 +1,4 @@
+interface:
+  display_name: "EL"
+  short_description: "Risk-scaled senior engineering for web software"
+  default_prompt: "Use $el to classify the change, trace its owner, and deliver the smallest complete slice with evidence."
