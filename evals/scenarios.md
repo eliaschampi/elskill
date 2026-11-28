@@ -50,3 +50,5 @@ Start with three cases, one per risk class: the button rename (trivial), the for
 | “Arrange the invoice detail screen.” Header, customer block, line table, totals, and three actions; the current layout centers everything with equal gaps. | One primary action in the header, secondary actions grouped, figures end-aligned in the table and totals, gaps between groups at least double those within them, and working content start-aligned; checked on the rendered page at narrow and wide widths. | Centered working content, equal gaps between and within groups, several primary-styled buttons, or alignment claimed without a rendered check. |
 
 For a failed case, change the narrowest instruction responsible and rerun that case plus adjacent affected cases. Keep evidence outside the skill entrypoints; add a durable rule only when it improves a repeatable decision.
+
+To check that a changed rule reads as intended, give a fresh agent with no conversation history only the changed file, the files it references, and targeted scenarios, including controls whose outcome must not change; keep the wording only if every expected outcome holds.
