@@ -4,7 +4,7 @@ description: Build, refactor, debug, or review web applications. Use for changes
 allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/probe.sh) Bash(${CLAUDE_SKILL_DIR}/scripts/probe.sh *)
 license: MIT
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # EL: senior-engineer operating contract
