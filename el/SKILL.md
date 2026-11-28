@@ -18,7 +18,7 @@ Precedence: explicit user decision > project instructions (CLAUDE.md, AGENTS.md,
 | Class | Signals | Response |
 | --- | --- | --- |
 | **Trivial** | One owner; no contract, stored-data, permission, or dependency change; easy to revert | Change it, run the nearest existing check, report. Load nothing else. |
-| **Standard** | Changes behavior or introduces a feature | Trace the affected flow, define the contract, read relevant guidance, verify. |
+| **Standard** | Changes behavior, introduces a feature, or refactors across owners | Trace the affected flow, define the contract, read relevant guidance, verify. |
 | **Critical** | Money, identity, authorization, tenant isolation, destructive or migrating data, concurrency, irreversible external effects | Standard, plus a failing test first, evidence under the competing or failing condition, and a pause on unresolved semantics. |
 
 Escalate on evidence (a rename that crosses a wire contract is not trivial); never downgrade to save effort.
