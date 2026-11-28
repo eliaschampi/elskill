@@ -66,6 +66,8 @@ bash -n install.sh
 
 These commands check metadata, relative links, reference routing, rule IDs, context budgets, and installer behavior. To measure how the skill affects an agent's work, compare runs on the same task and fixtures using the [behavioral evaluation scenarios](evals/scenarios.md).
 
+These checks cannot show that a rule reads as intended. After changing a rule, give a fresh agent with no conversation history only the changed file and targeted scenarios, including controls whose outcome must not change; keep the wording only if every expected outcome holds.
+
 ## License
 
 EL is released under the [MIT License](LICENSE). The [source notes](SOURCES.md) credit the material that informed the guidance and link to its licenses.
