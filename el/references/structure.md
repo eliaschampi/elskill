@@ -66,7 +66,7 @@ repo/
     src/features/<f>/     mod, routes, queries, jobs, tests
     src/platform/         auth, tenancy, errors, telemetry, db
   crates/contract/        wire schema, generated TS client (single source)
-  db/migrations/          immutable, ordered, named constraints
+  db/migrations/          ordered, named constraints (B9)
   xtask/                  repo checks as code
 ```
 

@@ -92,7 +92,7 @@ Index real filter and sort paths. Partial indexes suit selective active or pendi
 
 ## Migration and release
 
-Applied migrations are immutable; use the existing deployment owner. Review table rewrites, lock duration, default evaluation, constraint validation, index creation, and batch size. Some operations (concurrent index creation) cannot run in a transaction block.
+Migration immutability follows B9; use the existing deployment owner. Review table rewrites, lock duration, default evaluation, constraint validation, index creation, and batch size. Some operations (concurrent index creation) cannot run in a transaction block.
 
 Mixed application versions: expand compatible schema, deploy compatible readers and writers, backfill and verify, switch reads, retire old use, contract. Name the exit condition for compatibility code. A failed migration needs a recovery plan; a speculative down migration does not guarantee data recovery.
 
